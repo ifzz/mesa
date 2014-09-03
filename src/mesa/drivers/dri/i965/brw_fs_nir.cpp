@@ -1029,8 +1029,17 @@ fs_visitor::nir_emit_load_const(const fs_builder &bld,
       bld.vgrf(brw_reg_type_for_bit_size(instr->def.bit_size),
                instr->def.num_components);
 
-   for (unsigned i = 0; i < instr->def.num_components; i++)
-      bld.MOV(offset(reg, bld, i), fs_reg(instr->value.i[i]));
+   switch (instr->def.bit_size) {
+   case 32:
+      for (unsigned i = 0; i < instr->def.num_components; i++)
+         bld.MOV(offset(reg, bld, i), fs_reg(instr->value.i[i]));
+      break;
+
+   case 64:
+      for (unsigned i = 0; i < instr->def.num_components; i++)
+         bld.MOV(offset(reg, bld, i), fs_reg(instr->value.d[i]));
+      break;
+   }
 
    nir_ssa_values[instr->def.index] = reg;
 }
