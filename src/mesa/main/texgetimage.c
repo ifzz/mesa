@@ -460,7 +460,6 @@ get_tex_rgba_uncompressed(struct gl_context *ctx, GLuint dimensions,
 
       /* Describe the dst format */
       GLboolean dst_is_integer = _mesa_is_enum_format_integer(format);
-      GLboolean src_is_uint = _mesa_is_format_unsigned(texImage->TexFormat);
       uint32_t dst_format = _mesa_format_from_format_and_type(format, type);
       bool dst_is_luminance = format == GL_LUMINANCE ||
          format == GL_LUMINANCE_ALPHA;
@@ -502,6 +501,7 @@ get_tex_rgba_uncompressed(struct gl_context *ctx, GLuint dimensions,
          if (needs_rgba) {
             uint32_t rgba_format;
             int rgba_stride;
+            GLboolean src_is_uint = _mesa_is_format_unsigned(texImage->TexFormat);
 
             /* Convert to RGBA float or (u)int depending on the type of the dst */
             if (dst_is_integer) {
