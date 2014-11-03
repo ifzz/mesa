@@ -546,9 +546,9 @@ get_tex_rgba_uncompressed(struct gl_context *ctx, GLuint dimensions,
 
             /* Rebase and handle transfer ops as necessary */
             if (dst_is_integer) {
-               _mesa_rebase_rgba_uint(width * height, (GLuint (*)[4]) rgba, texImage->_BaseFormat);
+               _mesa_rebase_rgba_uint(width * height, (GLuint (*)[4]) rgba, rebaseFormat);
             } else {
-               _mesa_rebase_rgba_float(width * height, (GLfloat (*)[4]) rgba, texImage->_BaseFormat);
+               _mesa_rebase_rgba_float(width * height, (GLfloat (*)[4]) rgba, rebaseFormat);
                if (transferOps)
                   _mesa_apply_rgba_transfer_ops(ctx, transferOps, width * height, rgba);
             }
