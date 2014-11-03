@@ -388,8 +388,6 @@ get_tex_rgba_uncompressed(struct gl_context *ctx, GLuint dimensions,
 
       assert (depth <= 1 || dimensions > 2);
 
-      /* Allocate buffer for one row of texels */
-
       if (texImage->TexObject->Target == GL_TEXTURE_1D_ARRAY) {
          depth = height;
          height = 1;
