@@ -501,13 +501,14 @@ get_tex_rgba_uncompressed(struct gl_context *ctx, GLuint dimensions,
          if (needs_rgba) {
             uint32_t rgba_format;
             int rgba_stride;
-            GLboolean src_is_uint = _mesa_is_format_unsigned(texImage->TexFormat);
 
             /* Convert to RGBA float or (u)int depending on the type of the dst */
             if (dst_is_integer) {
                /* To avoid losing information because of clamping when converting
                 * from source to RGBA, check if source's format is signed or not.
                 */
+               GLboolean src_is_uint = _mesa_is_format_unsigned(texImage->TexFormat);
+
                if (src_is_uint) {
                   rgba_format = RGBA8888_UINT.as_uint;
                   rgba_stride = width * 4 * sizeof(GLuint);
