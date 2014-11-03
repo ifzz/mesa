@@ -461,8 +461,6 @@ get_tex_rgba_uncompressed(struct gl_context *ctx, GLuint dimensions,
       /* Describe the dst format */
       GLboolean dst_is_integer = _mesa_is_enum_format_integer(format);
       uint32_t dst_format = _mesa_format_from_format_and_type(format, type);
-      bool dst_is_luminance = format == GL_LUMINANCE ||
-         format == GL_LUMINANCE_ALPHA;
       int dst_stride = _mesa_image_row_stride(&ctx->Pack, width, format, type);
 
       /* Since _mesa_format_convert does not handle transferOps we need to handle
@@ -474,7 +472,7 @@ get_tex_rgba_uncompressed(struct gl_context *ctx, GLuint dimensions,
        * the expected results and this also requires to convert to RGBA first.
        */
       assert(!transferOps || (transferOps && !dst_is_integer));
-      bool needs_rgba = (transferOps || rebaseFormat || dst_is_luminance);
+      bool needs_rgba = (transferOps || rebaseFormat);
 
       for (img = 0; img < depth; img++) {
          GLubyte *srcMap;
