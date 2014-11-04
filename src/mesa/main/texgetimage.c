@@ -538,9 +538,9 @@ get_tex_rgba_uncompressed(struct gl_context *ctx, GLuint dimensions,
             }
 
             /* Convert to RGBA now */
-            _mesa_format_convert(rgba, rgba_format, rgba_stride,
-                                 img_src, texFormat, rowstride,
-                                 width, height, GL_RGBA);
+            _mesa_format_convert_clamp(rgba, rgba_format, rgba_stride,
+                                       img_src, texFormat, rowstride,
+                                       width, height, GL_RGBA, true);
 
             /* Rebase and handle transfer ops as necessary */
             if (dst_is_integer) {
@@ -569,10 +569,10 @@ get_tex_rgba_uncompressed(struct gl_context *ctx, GLuint dimensions,
          }
 
          /* Do the conversion to destination format */
-         _mesa_format_convert(dest, dst_format, dst_stride,
-                              src, src_format, src_stride,
-                              width, height,
-                              _mesa_get_format_base_format(dst_format));
+         _mesa_format_convert_clamp(dest, dst_format, dst_stride,
+                                    src, src_format, src_stride,
+                                    width, height,
+                                    _mesa_get_format_base_format(dst_format), true);
 
          if (rgba)
             free(rgba);
