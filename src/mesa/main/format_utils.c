@@ -445,15 +445,18 @@ _mesa_format_convert(void *void_dst, uint32_t dst_format, size_t dst_stride,
        */
       if (dst_internal_format != _mesa_get_format_base_format(dst_format)) {
          /* Compute src2rgba as src->rgba->base->rgba */
-         GLubyte rgba2base[4], base2rgba[4];
+         GLubyte rgba2base[4], base2rgba[4], src2rgba_orig[4];
          _mesa_compute_component_mapping(GL_RGBA, dst_internal_format, rgba2base);
          _mesa_compute_component_mapping(dst_internal_format, GL_RGBA, base2rgba);
+
+         for (i = 0; i < 4; i++)
+            src2rgba_orig[i] = src2rgba[i];
 
          for (i = 0; i < 4; i++) {
             if (base2rgba[i] > MESA_FORMAT_SWIZZLE_W)
                src2rgba[i] = base2rgba[i];
             else
-               src2rgba[i] = src2rgba[rgba2base[base2rgba[i]]];
+               src2rgba[i] = src2rgba_orig[rgba2base[base2rgba[i]]];
          }
       }
 
