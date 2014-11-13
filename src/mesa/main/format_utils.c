@@ -428,7 +428,7 @@ _mesa_format_convert(void *void_dst, uint32_t dst_format, size_t dst_stride,
 
       invert_swizzle(rgba2dst, dst2rgba);
 
-      normalized = dst_array_format.normalized;
+      normalized |= dst_array_format.normalized;
    }
 
    if (src_array_format.as_uint && dst_array_format.as_uint) {
