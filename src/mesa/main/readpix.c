@@ -455,7 +455,7 @@ read_rgba_pixels( struct gl_context *ctx,
     * integer we can ignore transferOps.
     *
     * Depending on the base formats involved in the conversion we might need to
-    * rebase some values and for that we need to converto to RGBA first too.
+    * rebase some values and for that we need to convert to RGBA first too.
     *
     * Converting to luminance requires converting to RGBA first, so we can then
     * compute luminance values as L=R+G+B.
