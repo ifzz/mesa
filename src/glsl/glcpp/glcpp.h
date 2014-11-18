@@ -201,6 +201,7 @@ struct glcpp_parser {
 	bool has_new_source_number;
 	int new_source_number;
 	bool is_gles;
+        int version;
 };
 
 struct gl_extensions;

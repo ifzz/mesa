@@ -2086,12 +2086,27 @@ _check_for_reserved_macro_name (glcpp_parser_t *parser, YYLTYPE *loc,
 	 * be allowed.
 	 *
 	 * A future version of the GLSL specification will clarify this.
-	 */
-	if (strstr(identifier, "__")) {
-		glcpp_warning(loc, parser,
-			      "Macro names containing \"__\" are reserved "
-			      "for use by the implementation.\n");
-	}
+	 *
+         * However Section 3.4 (Preprocessor) of the GLSL ES 3.00 spec says:
+         *     "All macro names containing two consecutive underscores ( __ )
+         *     are reserved for future use as predefined macro names. All
+         *     macro names prefixed with “GL_” (“GL” followed by a single
+         *     underscore) are also reserved.
+         *
+         * It is an error to undefine or to redefine a built-in (pre-defined)
+         * macro name.
+         */
+        if (strstr(identifier, "__")) {
+           if (parser->is_gles && parser->version >= 300) {
+              glcpp_error(loc, parser,
+                          "Macro names containing \"__\" are reserved "
+                          "for use by the implementation.\n");
+           } else {
+              glcpp_warning(loc, parser,
+                            "Macro names containing \"__\" are reserved "
+                            "for use by the implementation.\n");
+           }
+        }
 	if (strncmp(identifier, "GL_", 3) == 0) {
 		glcpp_error (loc, parser, "Macro names starting with \"GL_\" are reserved.\n");
 	}
@@ -2363,6 +2378,7 @@ _glcpp_parser_handle_version_declaration(glcpp_parser_t *parser, intmax_t versio
 		return;
 
 	parser->version_resolved = true;
+        parser->version = version;
 
 	add_builtin_define (parser, "__VERSION__", version);
 
