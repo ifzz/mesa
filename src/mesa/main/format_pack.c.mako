@@ -193,14 +193,14 @@ pack_uint_${f.short_name()}(const GLuint src[4], void *dst)
          <% continue %>
       %endif
 
-      ${channel_datatype(c)} ${c.name} =
+      ${c.datatype()} ${c.name} =
       %if not f.is_normalized():
          %if c.type == parser.FLOAT and c.size == 32:
             UINT_TO_FLOAT(src[${i}]);
          %elif c.type == parser.FLOAT and c.size == 16:
             _mesa_float_to_half(UINT_TO_FLOAT(src[${i}]));
          %else:
-            (${channel_datatype(c)}) src[${i}];
+            (${c.datatype()}) src[${i}];
          %endif
       %else:
          <% assert False %>
@@ -208,7 +208,7 @@ pack_uint_${f.short_name()}(const GLuint src[4], void *dst)
    %endfor
 
    %if f.layout == parser.ARRAY:
-      ${format_datatype(f)} *d = (${format_datatype(f)} *)dst;
+      ${f.datatype()} *d = (${f.datatype()} *)dst;
       %for (i, c) in enumerate(f.channels):
          %if c.type == 'x':
             <% continue %>
@@ -216,14 +216,14 @@ pack_uint_${f.short_name()}(const GLuint src[4], void *dst)
          d[${i}] = ${c.name};
       %endfor
    %elif f.layout == parser.PACKED:
-      ${format_datatype(f)} d = 0;
+      ${f.datatype()} d = 0;
       %for (i, c) in enumerate(f.channels):
          %if c.type == 'x':
             <% continue %>
          %endif
          d |= PACK(${c.name}, ${c.shift}, ${c.size});
       %endfor
-      (*(${format_datatype(f)} *)dst) = d;
+      (*(${f.datatype()} *)dst) = d;
    %else:
       <% assert False %>
    %endif
