@@ -50,7 +50,6 @@
 
 <%
 import format_parser as parser
-from format_convert import channel_datatype, format_datatype
 
 formats = parser.parse(argv[1])
 
@@ -76,17 +75,17 @@ for f in formats:
 static inline void
 unpack_float_${f.short_name()}(const void *void_src, GLfloat dst[4])
 {
-   ${format_datatype(f)} *src = (${format_datatype(f)} *)void_src;
+   ${f.datatype()} *src = (${f.datatype()} *)void_src;
    %if f.layout == parser.PACKED:
       %for c in f.channels:
          %if c.type != 'x':
-            ${channel_datatype(c)} ${c.name} = UNPACK(*src, ${c.shift}, ${c.size});
+            ${c.datatype()} ${c.name} = UNPACK(*src, ${c.shift}, ${c.size});
          %endif
       %endfor
    %elif f.layout == parser.ARRAY:
       %for (i, c) in enumerate(f.channels):
          %if c.type != 'x':
-            ${channel_datatype(c)} ${c.name} = src[${i}];
+            ${c.datatype()} ${c.name} = src[${i}];
          %endif
       %endfor
    %else:
@@ -219,17 +218,17 @@ unpack_float_ycbcr_rev(const void *src, GLfloat dst[][4], GLuint n)
 static inline void
 unpack_ubyte_${f.short_name()}(const void *void_src, GLubyte dst[4])
 {
-   ${format_datatype(f)} *src = (${format_datatype(f)} *)void_src;
+   ${f.datatype()} *src = (${f.datatype()} *)void_src;
    %if f.layout == parser.PACKED:
       %for c in f.channels:
          %if c.type != 'x':
-            ${channel_datatype(c)} ${c.name} = UNPACK(*src, ${c.shift}, ${c.size});
+            ${c.datatype()} ${c.name} = UNPACK(*src, ${c.shift}, ${c.size});
          %endif
       %endfor
    %elif f.layout == parser.ARRAY:
       %for (i, c) in enumerate(f.channels):
          %if c.type != 'x':
-            ${channel_datatype(c)} ${c.name} = src[${i}];
+            ${c.datatype()} ${c.name} = src[${i}];
          %endif
       %endfor
    %else:
@@ -298,17 +297,17 @@ unpack_ubyte_a2r10g10b10_unorm(const void *void_src, GLubyte dst[4])
 static inline void
 unpack_int_${f.short_name()}(const void *void_src, GLuint dst[4])
 {
-   ${format_datatype(f)} *src = (${format_datatype(f)} *)void_src;
+   ${f.datatype()} *src = (${f.datatype()} *)void_src;
    %if f.layout == parser.PACKED:
       %for c in f.channels:
          %if c.type != 'x':
-            ${channel_datatype(c)} ${c.name} = UNPACK(*src, ${c.shift}, ${c.size});
+            ${c.datatype()} ${c.name} = UNPACK(*src, ${c.shift}, ${c.size});
          %endif
       %endfor
    %elif f.layout == parser.ARRAY:
       %for (i, c) in enumerate(f.channels):
          %if c.type != 'x':
-            ${channel_datatype(c)} ${c.name} = src[${i}];
+            ${c.datatype()} ${c.name} = src[${i}];
          %endif
       %endfor
    %else:
