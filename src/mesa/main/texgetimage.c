@@ -382,6 +382,10 @@ get_tex_rgba_uncompressed(struct gl_context *ctx, GLuint dimensions,
    GLuint depth = texImage->Depth;
    GLuint img;
    GLenum texBaseFormat = _mesa_get_format_base_format(texImage->TexFormat);
+   GLboolean dst_is_integer = false;
+   uint32_t dst_format = 0;
+   int dst_stride = 0;
+   bool needs_rgba = false;
 
    assert (depth <= 1 || dimensions > 2);
 
@@ -408,9 +412,9 @@ get_tex_rgba_uncompressed(struct gl_context *ctx, GLuint dimensions,
    }
 
    /* Describe the dst format */
-   GLboolean dst_is_integer = _mesa_is_enum_format_integer(format);
-   uint32_t dst_format = _mesa_format_from_format_and_type(format, type);
-   int dst_stride = _mesa_image_row_stride(&ctx->Pack, width, format, type);
+   dst_is_integer = _mesa_is_enum_format_integer(format);
+   dst_format = _mesa_format_from_format_and_type(format, type);
+   dst_stride = _mesa_image_row_stride(&ctx->Pack, width, format, type);
 
    /* Since _mesa_format_convert does not handle transferOps we need to handle
     * them before we call the function. This requires to convert to RGBA float
@@ -421,11 +425,15 @@ get_tex_rgba_uncompressed(struct gl_context *ctx, GLuint dimensions,
     * the expected results and this also requires to convert to RGBA first.
     */
    assert(!transferOps || (transferOps && !dst_is_integer));
-   bool needs_rgba = (transferOps || rebaseFormat != GL_NONE);
+   needs_rgba = (transferOps || rebaseFormat != GL_NONE);
 
    for (img = 0; img < depth; img++) {
       GLubyte *srcMap;
       GLint rowstride;
+      GLubyte *img_src;
+      void *dest, *rgba, *src;
+      int src_stride;
+      uint32_t src_format;
 
       /* map src texture buffer */
       ctx->Driver.MapTextureImage(ctx, texImage, img,
@@ -436,18 +444,16 @@ get_tex_rgba_uncompressed(struct gl_context *ctx, GLuint dimensions,
          return;
       }
 
-      GLubyte *img_src = srcMap;
-      void *dest = _mesa_image_address(dimensions, &ctx->Pack, pixels,
+      img_src = srcMap;
+      dest = _mesa_image_address(dimensions, &ctx->Pack, pixels,
                                        width, height, format, type,
                                        img, 0, 0);
 
-      void *rgba = NULL;
-      void *src;
-      int src_stride;
-      uint32_t src_format;
+      rgba = NULL;
       if (needs_rgba) {
          uint32_t rgba_format;
          int rgba_stride;
+         bool need_convert;
 
          /* Convert to RGBA float or (u)int depending on the type of the dst */
          if (dst_is_integer) {
@@ -472,7 +478,6 @@ get_tex_rgba_uncompressed(struct gl_context *ctx, GLuint dimensions,
           * convert to, then we can convert directly into the dst buffer and avoid
           * the final conversion/copy from the rgba buffer to the dst buffer.
           */
-         bool need_convert;
          if (format == rgba_format) {
             need_convert = false;
             rgba = dest;
