@@ -248,7 +248,7 @@ pack_float_${f.short_name()}(const GLfloat src[4], void *dst)
          <% continue %>
       %endif
 
-      ${channel_datatype(c)} ${c.name} =
+      ${c.datatype()} ${c.name} =
       %if c.type == parser.UNSIGNED:
          %if f.colorspace == 'srgb' and c.name in 'rgb':
             <% assert c.size == 8 %>
@@ -272,7 +272,7 @@ pack_float_${f.short_name()}(const GLfloat src[4], void *dst)
    %endfor
 
    %if f.layout == parser.ARRAY:
-      ${format_datatype(f)} *d = (${format_datatype(f)} *)dst;
+      ${f.datatype()} *d = (${f.datatype()} *)dst;
       %for (i, c) in enumerate(f.channels):
          %if c.type == 'x':
             <% continue %>
@@ -280,14 +280,14 @@ pack_float_${f.short_name()}(const GLfloat src[4], void *dst)
          d[${i}] = ${c.name};
       %endfor
    %elif f.layout == parser.PACKED:
-      ${format_datatype(f)} d = 0;
+      ${f.datatype()} d = 0;
       %for (i, c) in enumerate(f.channels):
          %if c.type == 'x':
             <% continue %>
          %endif
          d |= PACK(${c.name}, ${c.shift}, ${c.size});
       %endfor
-      (*(${format_datatype(f)} *)dst) = d;
+      (*(${f.datatype()} *)dst) = d;
    %else:
       <% assert False %>
    %endif
