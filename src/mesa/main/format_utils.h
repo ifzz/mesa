@@ -32,6 +32,7 @@
 #define FORMAT_UTILS_H
 
 #include "imports.h"
+#include "macros.h"
 
 extern mesa_array_format RGBA8888_FLOAT;
 extern mesa_array_format RGBA8888_UBYTE;
@@ -141,6 +142,30 @@ _mesa_snorm_to_snorm(int x, unsigned src_bits, unsigned dst_bits)
       return EXTEND_NORMALIZED_INT(x, src_bits - 1, dst_bits - 1);
    else
       return x >> (src_bits - dst_bits);
+}
+
+static inline unsigned
+_mesa_unsigned_to_unsigned(unsigned src, unsigned dst_size)
+{
+   return MIN2(src, MAX_UINT(dst_size));
+}
+
+static inline int
+_mesa_unsigned_to_signed(unsigned src, unsigned dst_size)
+{
+   return MIN2(src, MAX_INT(dst_size));
+}
+
+static inline int
+_mesa_signed_to_signed(int src, unsigned dst_size)
+{
+   return CLAMP(src, -(1 << (dst_size -1)), MAX_INT(dst_size));
+}
+
+static inline unsigned
+_mesa_signed_to_unsigned(int src, unsigned dst_size)
+{
+   return CLAMP(src, 0, MAX_UINT(dst_size));
 }
 
 bool
