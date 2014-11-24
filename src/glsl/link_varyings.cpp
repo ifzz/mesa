@@ -263,6 +263,24 @@ cross_validate_outputs_to_inputs(struct gl_shader_program *prog,
          if (output != NULL) {
             cross_validate_types_and_qualifiers(prog, input, output,
                                                 consumer->Stage, producer->Stage);
+         } else {
+            /* If gl_in don't do anything */
+            if (strcmp(input->name, "gl_in") == 0 && input->data.used)
+               continue;
+            /* Check for input vars with unmatched output vars in prev stage
+             * taking into account that blocks could have a match output var
+             * but with different name, so we ignore them
+             * (!input->data.matrix_layout).
+             */
+            if (input->data.used && !input->data.assigned &&
+                !input->data.matrix_layout &&
+                input->data.how_declared == ir_var_declared_normally &&
+                input->data.location == -1)
+               linker_error(prog,
+                            "%s shader input `%s' "
+                            "has no matching output\n",
+                            _mesa_shader_stage_to_string(consumer->Stage),
+                            input->name);
          }
       }
    }
