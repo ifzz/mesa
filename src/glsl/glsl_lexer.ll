@@ -211,6 +211,12 @@ HASH		^{SPC}#{SPC}
 				  BEGIN PP;
 				  return PRAGMA_DEBUG_OFF;
 				}
+^{SPC}#{SPC}pragma{SPCP}debug{SPC}\({SPC}[[:alnum:][:punct:]]*{SPC}\) {
+				  BEGIN PP;
+				  _mesa_glsl_error(yylloc, yyextra,
+					"illegal use of reserved word `debug'");
+				  return PRAGMA_DEBUG_OFF;
+				}
 ^{SPC}#{SPC}pragma{SPCP}optimize{SPC}\({SPC}on{SPC}\) {
 				  BEGIN PP;
 				  return PRAGMA_OPTIMIZE_ON;
