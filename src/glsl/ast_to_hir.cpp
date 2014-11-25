@@ -4167,6 +4167,28 @@ ast_function::hir(exec_list *instructions,
                return NULL;
             }
          }
+      } else {
+         /* From GLSL ES 3.0 spec, chapter 6.1 "Function Definitions", page 71:
+          *
+          * "A shader cannot redefine or overload built-in functions."
+          *
+          * While in GLSL ES 1.0 spec, chapter 6.1 "Function Definitions", page
+          * 54, this is allowed:
+          *
+          * "Function names can be overloaded. [...] Overloading is used heavily
+          * in the built-in functions."
+          *
+          */
+         if (state->es_shader && state->language_version >= 300) {
+            /* Local shader has no exact candidates; check the built-ins. */
+            _mesa_glsl_initialize_builtin_functions();
+            if (_mesa_glsl_find_builtin_function_by_name(state, name)) {
+               YYLTYPE loc = this->get_location();
+               _mesa_glsl_error(& loc, state,
+                                "A shader cannot redefine or overload built-in "
+                                "function `%s' in GLSL ES 3.00", name);
+            }
+         }
       }
    }
 
