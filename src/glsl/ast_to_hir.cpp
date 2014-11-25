@@ -4160,6 +4160,20 @@ ast_function::hir(exec_list *instructions,
                return NULL;
             }
          }
+      } else {
+         /* In GLSL ES 3.00, a shader cannot redefine or overload built-in
+          * functions. So search for matching built-in functions by name.
+          */
+         if (state->es_shader && state->language_version >= 300) {
+            /* Local shader has no exact candidates; check the built-ins. */
+            _mesa_glsl_initialize_builtin_functions();
+            if (_mesa_glsl_find_builtin_function_by_name(state, name)) {
+               YYLTYPE loc = this->get_location();
+               _mesa_glsl_error(& loc, state,
+                                "A shader cannot redefine or overload built-in "
+                                "function `%s'", name);
+            }
+         }
       }
    }
 
