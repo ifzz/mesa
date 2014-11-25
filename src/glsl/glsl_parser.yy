@@ -2539,6 +2539,31 @@ basic_interface_block:
                              "interface block member does not match "
                              "the interface block");
          }
+         /* From GLSL ES 3.0, chapter 4.3.7 "Interface Blocks", page 38:
+          *
+          * "GLSL ES 3.0 does not support interface blocks for shader inputs or
+          * outputs."
+          *
+          * And from GLSL ES 3.0, chapter 4.6.1 "The invariant qualifier", page 52.
+          *
+          * "Only variables output from a shader can be candidates for
+          * invariance. This includes user-defined output variables and the
+          * built-in output variables. As only outputs can be declared as
+          * invariant, an invariant output from one shader stage will
+          * still match an input of a subsequent stage without the input being
+          * declared as invariant."
+          *
+          * From GLSL ES 1.0, chapter 4.6.1 "The invariant qualifier", page 37.
+          *
+          * "Only the following variables may be declared as invariant:
+          *  * Built-in special variables output from the vertex shader
+          *  * Varying variables output from the vertex shader
+          *  * Built-in special variables input to the fragment shader
+          *  * Varying variables input to the fragment shader
+          *  * Built-in special variables output from the fragment shader."
+          */
+         if (state->es_shader && qualifier.flags.q.invariant)
+            _mesa_glsl_error(&@1, state, "invariant qualifiers cannot be used with interface blocks in GLSL ES");
       }
 
       $$ = block;
