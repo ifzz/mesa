@@ -1588,6 +1588,8 @@ type_qualifier:
 
       $$ = $2;
       $$.flags.q.invariant = 1;
+      if (state->es_shader && state->language_version >= 300 && $$.flags.q.in)
+         _mesa_glsl_error(&@1, state, "invariant qualifiers cannot be used with shader inputs");
    }
    | interpolation_qualifier type_qualifier
    {
