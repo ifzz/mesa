@@ -2516,6 +2516,12 @@ basic_interface_block:
                              "interface block member does not match "
                              "the interface block");
          }
+         /* GLSL ES 3.0 does not support interface blocks for shader inputs or outputs
+          * and invariant qualifier can only be applied to outputs. In GLSL ES 1.0 only
+          * for varyings and built-in special variables.
+          */
+         if (state->es_shader && qualifier.flags.q.invariant)
+            _mesa_glsl_error(&@1, state, "invariant qualifiers cannot be used with interface blocks in GLSL ES");
       }
 
       $$ = block;
