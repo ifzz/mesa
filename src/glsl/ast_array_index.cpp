@@ -46,7 +46,9 @@ ast_array_specifier::print(void) const
  *
  * This function also checks whether the array is a built-in array whose
  * maximum size is too small to accommodate the given index, and if so uses
- * loc and state to report the error.
+ * loc and state to report the error. It also checks that the built-in array
+ * gl_FragData is not accessed with indexes greater than zero in OpenGL ES,
+ * where multiple render targets are not allowed.
  */
 static void
 update_max_array_access(ir_rvalue *ir, int idx, YYLTYPE *loc,
@@ -54,6 +56,23 @@ update_max_array_access(ir_rvalue *ir, int idx, YYLTYPE *loc,
 {
    if (ir_dereference_variable *deref_var = ir->as_dereference_variable()) {
       ir_variable *var = deref_var->var;
+
+      /* Page 89 in the section 3.8 (Fragment Shaders) of the the
+       * OpenGL ES 2.0.25 spec says:
+       *     "The OpenGL ES Shading Language specification describes the
+       *     values that may be output by a fragment shader. These are
+       *     gl_FragColor and gl_FragData[0].
+       *              ...
+       *     gl_FragData is supported for compatibility with the desktop
+       *     OpenGL Shading Language, but only a single fragment color
+       *     output is allowed in the OpenGL ES Shading Language."
+       */
+      if (state->es_shader && idx > 0 &&
+          strcmp(var->name, "gl_FragData") == 0) {
+         _mesa_glsl_error(loc, state,
+                          "multiple render targets are not supported");
+      }
+
       if (idx > (int)var->data.max_array_access) {
          var->data.max_array_access = idx;
 
