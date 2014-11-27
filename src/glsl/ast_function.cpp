@@ -1331,67 +1331,82 @@ emit_inline_matrix_constructor(const glsl_type *type,
       unsigned row_idx = 0;
 
       foreach_in_list(ir_rvalue, rhs, parameters) {
-	 const unsigned components_remaining_this_column = rows - row_idx;
+	 unsigned components_remaining_this_column;
 	 unsigned rhs_components = rhs->type->components();
 	 unsigned rhs_base = 0;
 
-	 /* Since the parameter might be used in the RHS of two assignments,
-	  * generate a temporary and copy the paramter there.
-	  */
-	 ir_variable *rhs_var =
-	    new(ctx) ir_variable(rhs->type, "mat_ctor_vec", ir_var_temporary);
-	 instructions->push_tail(rhs_var);
+         /* Since the parameter might be used in the RHS of two assignments,
+          * generate a temporary and copy the paramter there.
+          */
+         ir_variable *rhs_var =
+            new(ctx) ir_variable(rhs->type, "mat_ctor_vec", ir_var_temporary);
+         instructions->push_tail(rhs_var);
 
-	 ir_dereference *rhs_var_ref =
-	    new(ctx) ir_dereference_variable(rhs_var);
-	 ir_instruction *inst = new(ctx) ir_assignment(rhs_var_ref, rhs, NULL);
-	 instructions->push_tail(inst);
+         ir_dereference *rhs_var_ref =
+            new(ctx) ir_dereference_variable(rhs_var);
+         ir_instruction *inst = new(ctx) ir_assignment(rhs_var_ref, rhs, NULL);
+         instructions->push_tail(inst);
 
-	 /* Assign the current parameter to as many components of the matrix
-	  * as it will fill.
-	  *
-	  * NOTE: A single vector parameter can span two matrix columns.  A
-	  * single vec4, for example, can completely fill a mat2.
-	  */
-	 if (rhs_components >= components_remaining_this_column) {
-	    const unsigned count = MIN2(rhs_components,
-					components_remaining_this_column);
+         do {
+            components_remaining_this_column = rows - row_idx;
+            /* Assign the current parameter to as many components of the matrix
+             * as it will fill.
+             *
+             * NOTE: A single vector parameter can span two matrix columns.  A
+             * single vec4, for example, can completely fill a mat2.
+             */
+            if (components_remaining_this_column > 0 &&
+                (rhs_components - rhs_base) >= components_remaining_this_column) {
+               const unsigned count = MIN2(rhs_components - rhs_base,
+                                           components_remaining_this_column);
 
-	    rhs_var_ref = new(ctx) ir_dereference_variable(rhs_var);
+               rhs_var_ref = new(ctx) ir_dereference_variable(rhs_var);
 
-	    ir_instruction *inst = assign_to_matrix_column(var, col_idx,
-							   row_idx,
-							   rhs_var_ref, 0,
-							   count, ctx);
-	    instructions->push_tail(inst);
+               ir_instruction *inst = assign_to_matrix_column(var, col_idx,
+                                                              row_idx,
+                                                              rhs_var_ref, 0,
+                                                              count, ctx);
+               instructions->push_tail(inst);
 
-	    rhs_base = count;
+               rhs_base += count;
 
-	    col_idx++;
-	    row_idx = 0;
-	 }
+               col_idx++;
+               row_idx = 0;
+               components_remaining_this_column = rows;
+            }
 
-	 /* If there is data left in the parameter and components left to be
-	  * set in the destination, emit another assignment.  It is possible
-	  * that the assignment could be of a vec4 to the last element of the
-	  * matrix.  In this case col_idx==cols, but there is still data
-	  * left in the source parameter.  Obviously, don't emit an assignment
-	  * to data outside the destination matrix.
-	  */
-	 if ((col_idx < cols) && (rhs_base < rhs_components)) {
-	    const unsigned count = rhs_components - rhs_base;
+            /* If there is data left in the parameter and components left to be
+             * set in the destination, emit another assignment. It is possible
+             * that the assignment could be of a vec4 to the last element of the
+             * matrix. In this case col_idx==cols, but there is still data
+             * left in the source parameter. Obviously, don't emit an assignment
+             * to data outside the destination matrix.
+             */
+            if ((col_idx < cols) && (rhs_base < rhs_components)) {
+               const unsigned count = MIN2(components_remaining_this_column,
+                                           rhs_components - rhs_base);
 
-	    rhs_var_ref = new(ctx) ir_dereference_variable(rhs_var);
+               rhs_var_ref = new(ctx) ir_dereference_variable(rhs_var);
 
-	    ir_instruction *inst = assign_to_matrix_column(var, col_idx,
-							   row_idx,
-							   rhs_var_ref,
-							   rhs_base,
-							   count, ctx);
-	    instructions->push_tail(inst);
-
-	    row_idx += count;
-	 }
+               ir_instruction *inst = assign_to_matrix_column(var, col_idx,
+                                                            row_idx,
+                                                            rhs_var_ref,
+                                                            rhs_base,
+                                                            count, ctx);
+               instructions->push_tail(inst);
+               rhs_base += count;
+               row_idx += count;
+            }
+            if (row_idx >= rows) {
+               row_idx = 0;
+               col_idx++;
+            }
+            /* Sometimes, there is still data left in the parameters and
+             * components left to be set in the destination but in other
+             * column. This loop makes sure that all the data that can be
+             * copied is actually copied.
+             */
+         } while(col_idx < cols && rhs_base < rhs_components);
       }
    }
 
