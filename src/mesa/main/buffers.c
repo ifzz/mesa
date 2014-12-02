@@ -323,14 +323,29 @@ _mesa_DrawBuffers(GLsizei n, const GLenum *buffers)
    supportedMask = supported_buffer_bitmask(ctx, ctx->DrawBuffer);
    usedBufferMask = 0x0;
 
-   /* From the ES 3.0 specification, page 180:
-    * "If the GL is bound to the default framebuffer, then n must be 1
-    *  and the constant must be BACK or NONE."
-    */
-   if (_mesa_is_gles3(ctx) && _mesa_is_winsys_fbo(ctx->DrawBuffer) &&
-       (n != 1 || (buffers[0] != GL_NONE && buffers[0] != GL_BACK))) {
-      _mesa_error(ctx, GL_INVALID_OPERATION, "glDrawBuffers(buffer)");
-      return;
+   if (_mesa_is_gles3(ctx)) {
+      /* From the ES 3.0 specification, page 179:
+       * "Each buffer listed in bufs must be BACK, NONE, or one of the values
+       * from table 4.3 (NONE, COLOR_ATTACHMENTi)
+       */
+      for (output = 0; output < n; output++) {
+         if (buffers[output] != GL_NONE && buffers[output] != GL_BACK &&
+             (buffers[output] < GL_COLOR_ATTACHMENT0 ||
+              buffers[output] >= GL_COLOR_ATTACHMENT0 + ctx->Const.MaxColorAttachments)) {
+            _mesa_error(ctx, GL_INVALID_ENUM, "glDrawBuffers(buffer)");
+            return;
+         }
+      }
+
+      /* From the ES 3.0 specification, page 180:
+       * "If the GL is bound to the default framebuffer, then n must be 1
+       *  and the constant must be BACK or NONE."
+       */
+      if (_mesa_is_winsys_fbo(ctx->DrawBuffer) &&
+          (n != 1 || (buffers[0] != GL_NONE && buffers[0] != GL_BACK))) {
+         _mesa_error(ctx, GL_INVALID_OPERATION, "glDrawBuffers(buffer)");
+         return;
+      }
    }
 
    /* complicated error checking... */
