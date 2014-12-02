@@ -42,6 +42,7 @@ extern mesa_array_format RGBA8888_INT;
 /* Only guaranteed to work for BITS <= 32 */
 #define MAX_UINT(BITS) ((BITS) == 32 ? UINT32_MAX : ((1u << (BITS)) - 1))
 #define MAX_INT(BITS) ((int)MAX_UINT((BITS) - 1))
+#define MIN_INT(BITS) ((BITS) == 32 ? INT32_MIN : (-(1 << (BITS - 1))))
 
 /* Extends an integer of size SRC_BITS to one of size DST_BITS linearly */
 #define EXTEND_NORMALIZED_INT(X, SRC_BITS, DST_BITS) \
@@ -159,7 +160,7 @@ _mesa_unsigned_to_signed(unsigned src, unsigned dst_size)
 static inline int
 _mesa_signed_to_signed(int src, unsigned dst_size)
 {
-   return CLAMP(src, -(1 << (dst_size -1)), MAX_INT(dst_size));
+   return CLAMP(src, MIN_INT(dst_size), MAX_INT(dst_size));
 }
 
 static inline unsigned
