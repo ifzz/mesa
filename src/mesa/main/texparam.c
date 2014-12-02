@@ -1658,14 +1658,18 @@ _mesa_GetTexParameteriv( GLenum target, GLenum pname, GLint *params )
       case GL_TEXTURE_MIN_LOD:
          if (!_mesa_is_desktop_gl(ctx) && !_mesa_is_gles3(ctx))
             goto invalid_pname;
-
-         *params = (GLint) obj->Sampler.MinLod;
+         /* GL spec 'Data Conversions' section specifies that floating-point
+          * value in integer Get function is rounded to nearest integer
+          */
+         *params = IROUND(obj->Sampler.MinLod);
          break;
       case GL_TEXTURE_MAX_LOD:
          if (!_mesa_is_desktop_gl(ctx) && !_mesa_is_gles3(ctx))
             goto invalid_pname;
-
-         *params = (GLint) obj->Sampler.MaxLod;
+         /* GL spec 'Data Conversions' section specifies that floating-point
+          * value in integer Get function is rounded to nearest integer
+          */
+         *params = IROUND(obj->Sampler.MaxLod);
          break;
       case GL_TEXTURE_BASE_LEVEL:
          if (!_mesa_is_desktop_gl(ctx) && !_mesa_is_gles3(ctx))
@@ -1679,7 +1683,10 @@ _mesa_GetTexParameteriv( GLenum target, GLenum pname, GLint *params )
       case GL_TEXTURE_MAX_ANISOTROPY_EXT:
          if (!ctx->Extensions.EXT_texture_filter_anisotropic)
             goto invalid_pname;
-         *params = (GLint) obj->Sampler.MaxAnisotropy;
+         /* GL spec 'Data Conversions' section specifies that floating-point
+          * value in integer Get function is rounded to nearest integer
+          */
+         *params = IROUND(obj->Sampler.MaxAnisotropy);
          break;
       case GL_GENERATE_MIPMAP_SGIS:
          if (ctx->API != API_OPENGL_COMPAT && ctx->API != API_OPENGLES)
