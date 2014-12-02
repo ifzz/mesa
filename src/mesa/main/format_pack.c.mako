@@ -178,6 +178,10 @@ pack_uint_${f.short_name()}(const GLuint src[4], void *dst)
       ${c.datatype()} ${c.name} =
       %if c.type == parser.FLOAT and c.size == 16:
          _mesa_float_to_half(src[${i}]);
+      %elif c.type == parser.SIGNED:
+         _mesa_unsigned_to_signed(src[${i}], ${c.size});
+      %elif c.type == parser.UNSIGNED:
+         _mesa_unsigned_to_unsigned(src[${i}], ${c.size});
       %else:
          (${c.datatype()}) src[${i}];
       %endif
