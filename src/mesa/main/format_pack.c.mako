@@ -84,7 +84,11 @@ pack_ubyte_${f.short_name()}(const GLubyte src[4], void *dst)
 
       ${c.datatype()} ${c.name} =
       %if not f.is_normalized() and f.is_int():
-            (${c.datatype()}) src[${i}];
+          %if c.type == parser.SIGNED:
+              _mesa_unsigned_to_signed(src[${i}], ${c.size});
+          %else:
+              _mesa_unsigned_to_unsigned(src[${i}], ${c.size});
+          %endif
       %elif c.type == parser.UNSIGNED:
          %if f.colorspace == 'srgb' and c.name in 'rgb':
             util_format_linear_to_srgb_8unorm(src[${i}]);
