@@ -1602,19 +1602,47 @@ vec4_visitor::visit(ir_expression *ir)
       break;
 
    case ir_unop_bitcast_i2f:
+      if (!op[0].negate) {
+         this->result = op[0];
+         this->result.type = BRW_REGISTER_TYPE_F;
+      } else {
+         result_dst.type = BRW_REGISTER_TYPE_D;
+         emit(MOV(result_dst, op[0]));
+         result_dst.type = BRW_REGISTER_TYPE_F;
+      }
+      break;
+
    case ir_unop_bitcast_u2f:
-      this->result = op[0];
-      this->result.type = BRW_REGISTER_TYPE_F;
+      if (!op[0].negate) {
+         this->result = op[0];
+         this->result.type = BRW_REGISTER_TYPE_F;
+      } else {
+         result_dst.type = BRW_REGISTER_TYPE_UD;
+         emit(MOV(result_dst, op[0]));
+         result_dst.type = BRW_REGISTER_TYPE_F;
+      }
       break;
 
    case ir_unop_bitcast_f2i:
-      this->result = op[0];
-      this->result.type = BRW_REGISTER_TYPE_D;
+      if (!op[0].negate) {
+         this->result = op[0];
+         this->result.type = BRW_REGISTER_TYPE_D;
+      } else {
+         result_dst.type = BRW_REGISTER_TYPE_F;
+         emit(MOV(result_dst, op[0]));
+         result_dst.type = BRW_REGISTER_TYPE_D;
+      }
       break;
 
    case ir_unop_bitcast_f2u:
-      this->result = op[0];
-      this->result.type = BRW_REGISTER_TYPE_UD;
+      if (!op[0].negate) {
+         this->result = op[0];
+         this->result.type = BRW_REGISTER_TYPE_UD;
+      } else {
+         result_dst.type = BRW_REGISTER_TYPE_F;
+         emit(MOV(result_dst, op[0]));
+         result_dst.type = BRW_REGISTER_TYPE_UD;
+      }
       break;
 
    case ir_unop_i2f:
