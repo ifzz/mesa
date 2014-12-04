@@ -726,7 +726,16 @@ find_custom_value(struct gl_context *ctx, const struct value_desc *d, union valu
       v->value_int = _mesa_get_stencil_ref(ctx, 1);
       break;
    case GL_STENCIL_VALUE_MASK:
-      v->value_int = ctx->Stencil.ValueMask[ctx->Stencil.ActiveFace];
+      /* Since stencil value mask is a GLuint, it requires clamping
+       * before storing in a signed int to avoid overflow.
+       * Notice that Stencil.ValueMask values are initialized to ~0u,
+       * so without clamping it will return -1 when assigned to value_int.
+       */
+      v->value_int = ctx->Stencil.ValueMask[ctx->Stencil.ActiveFace] & 0x7FFFFFFF;
+      break;
+   case GL_STENCIL_BACK_VALUE_MASK:
+      /* Same as with GL_STENCIL_VALUE_MASK, value requires claming. */
+      v->value_int = ctx->Stencil.ValueMask[1] & 0x7FFFFFFF;
       break;
    case GL_STENCIL_WRITEMASK:
       v->value_int = ctx->Stencil.WriteMask[ctx->Stencil.ActiveFace];
