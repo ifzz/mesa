@@ -1807,6 +1807,15 @@ renderbuffer_storage(GLenum target, GLenum internalFormat,
       samples = 0;
    }
    else {
+      if (_mesa_is_gles3(ctx) && _mesa_is_enum_format_integer(internalFormat)) {
+         /* Per GLES3 specification, section 4.4 Framebuffer objects page 198, "If
+          * internalformat is a signed or unsigned integer format and samples is greater
+          * than zero, then the error INVALID_OPERATION is generated.".
+          */
+         _mesa_error(ctx, GL_INVALID_OPERATION, "%s(samples)", func);
+         return;
+      }
+
       /* check the sample count;
        * note: driver may choose to use more samples than what's requested
        */
