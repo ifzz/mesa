@@ -965,7 +965,7 @@ _mesa_test_framebuffer_completeness(struct gl_context *ctx,
          if (!is_format_color_renderable(ctx, attFormat,
                                          texImg->InternalFormat) &&
              !is_legal_depth_format(ctx, f)) {
-            fb->_Status = GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT;
+            fb->_Status = GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT;
             fbo_incomplete(ctx, "texture attachment incomplete", -1);
             return;
          }
