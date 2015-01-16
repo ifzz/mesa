@@ -153,7 +153,12 @@ fs_visitor::visit(ir_variable *ir)
 	    int output = ir->data.location - FRAG_RESULT_DATA0 + i;
 	    this->outputs[output] = offset(*reg, vector_elements * i);
 	    this->output_components[output] = vector_elements;
-	 }
+            /* Initialize general color output */
+            for (int elem = 0; elem < vector_elements; elem++) {
+               fs_reg l = offset(this->outputs[output], elem);
+               emit(MOV(l, brw_imm_ud(0)));
+            }
+         }
       }
    } else if (ir->data.mode == ir_var_uniform) {
       int param_index = uniforms;
