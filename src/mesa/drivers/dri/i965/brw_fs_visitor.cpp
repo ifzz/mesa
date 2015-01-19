@@ -3285,7 +3285,7 @@ fs_visitor::setup_color_payload(fs_reg *dst, fs_reg color, unsigned components)
          if (colors_enabled & (1 << i)) {
             dst[len] = fs_reg(GRF, virtual_grf_alloc(color.width / 8),
                               color.type, color.width);
-            inst = emit(MOV(dst[len], offset(color, i)));
+            inst = emit(MOV(dst[len], brw_imm_f(0.0)));
             inst->saturate = key->clamp_fragment_color;
          } else if (color.width == 16) {
             /* We need two BAD_FILE slots for a 16-wide color */
