@@ -882,6 +882,14 @@ _mesa_init_texture(struct gl_context *ctx)
     *     "OpenGL ES 3.0 requires that all cube map filtering be
     *     seamless. OpenGL ES 2.0 specified that a single cube map face be
     *     selected and used for filtering."
+    *
+    * FIXME: the call to _mesa_is_gles3 below will only work as intended if
+    * the driver has already computed and set ctx->Version, however drivers
+    * seem to call _mesa_initialize_context (which calls this) early
+    * in the CreateContext hook and _mesa_compute_version much later (since
+    * it needs information about available extensions), which means that this
+    * won't actually work unless we figure out a way to compute the GL version
+    * before _mesa_initialize_context is called.
     */
    ctx->Texture.CubeMapSeamless = _mesa_is_gles3(ctx);
 
