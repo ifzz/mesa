@@ -853,6 +853,12 @@ brwCreateContext(gl_api api,
 
    _mesa_compute_version(ctx);
 
+   /* This is done in _mesa_init_texture called from _mesa_initialize_context
+    * above, but it won't work until we have computed the GL version, so
+    * do it again here.
+    */
+   ctx->Texture.CubeMapSeamless = _mesa_is_gles3(ctx);
+
    _mesa_initialize_dispatch_tables(ctx);
    _mesa_initialize_vbo_vtxfmt(ctx);
 
