@@ -323,6 +323,19 @@ _mesa_ClearBufferiv(GLenum buffer, GLint drawbuffer, const GLint *value)
       _mesa_update_state( ctx );
    }
 
+   /* Section 4.2.3 Clearing the Buffers, page 190 of the OpenGL ES 3.0.4
+    * spec says:
+    *
+    *    "ClearBufferiv generates an INVALID_ENUM error if buffer is not COLOR or
+    *     STENCIL."
+    */
+   if (_mesa_is_gles3(ctx) &&
+       (buffer == GL_DEPTH || buffer == GL_DEPTH_STENCIL)) {
+      _mesa_error(ctx, GL_INVALID_ENUM,
+                  "glClearBufferiv(buffer=GL_DEPTH || GL_DEPTH_STENCIL)");
+      return;
+   }
+
    switch (buffer) {
    case GL_STENCIL:
       /* Page 264 (page 280 of the PDF) of the OpenGL 3.0 spec says:
