@@ -5247,26 +5247,23 @@ ast_process_structure_or_interface_block(exec_list *instructions,
           * structure or interface block.  Structures need this data because
           * the structure may contain a structure that contains ... a matrix
           * that need the proper layout.
+          *
+          * If no layout is specified for the field, inherit the layout
+          * from the block. For non-matrix fields, this is harmless.
           */
-         if (field_type->without_array()->is_matrix()
-             || field_type->without_array()->is_record()) {
-            /* If no layout is specified for the field, inherit the layout
-             * from the block.
-             */
-            fields[i].matrix_layout = matrix_layout;
+         fields[i].matrix_layout = matrix_layout;
 
-            if (qual->flags.q.row_major)
-               fields[i].matrix_layout = GLSL_MATRIX_LAYOUT_ROW_MAJOR;
-            else if (qual->flags.q.column_major)
-               fields[i].matrix_layout = GLSL_MATRIX_LAYOUT_COLUMN_MAJOR;
+         if (qual->flags.q.row_major)
+            fields[i].matrix_layout = GLSL_MATRIX_LAYOUT_ROW_MAJOR;
+         else if (qual->flags.q.column_major)
+            fields[i].matrix_layout = GLSL_MATRIX_LAYOUT_COLUMN_MAJOR;
 
-            /* If we're processing an interface block, the matrix layout must
-             * be decided by this point.
-             */
-            assert(!is_interface
-                   || fields[i].matrix_layout == GLSL_MATRIX_LAYOUT_ROW_MAJOR
-                   || fields[i].matrix_layout == GLSL_MATRIX_LAYOUT_COLUMN_MAJOR);
-         }
+         /* If we're processing an interface block, the matrix layout must
+          * be decided by this point.
+          */
+         assert(!is_interface
+                || fields[i].matrix_layout == GLSL_MATRIX_LAYOUT_ROW_MAJOR
+                || fields[i].matrix_layout == GLSL_MATRIX_LAYOUT_COLUMN_MAJOR);
 
          i++;
       }
