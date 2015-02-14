@@ -208,6 +208,32 @@ link_uniform_blocks(void *mem_ctx,
       const glsl_type *const block_type =
          b->type->is_array() ? b->type->fields.array : b->type;
 
+      /* Section 2.12.6 (Uniform Variables) of the OpenGL ES 3.0.4 spec says:
+       *
+       *   "All members of a named uniform block declared with a shared or
+       *   std140 layout qualifier are considered active, even if they are not
+       *   referenced in any shader in the program. The uniform block itself is
+       *   also considered active, even if no member of the block is
+       *   referenced."
+       *
+       * If the named uniform block is an array declared with a shared or
+       * std140 layout qualifier and no shader instruction has referenced it,
+       * then it is never marked as active, then num_array_elements is zero.
+       */
+      if (b->num_array_elements == 0 && b->type->is_array() &&
+          (b->type->interface_packing == GLSL_INTERFACE_PACKING_STD140 ||
+           b->type->interface_packing == GLSL_INTERFACE_PACKING_SHARED)) {
+         struct link_uniform_block_active *const block =
+            (struct link_uniform_block_active *) entry->data;
+         block->num_array_elements = block->type->length;
+         block->array_elements = reralloc(mem_ctx,
+                                          block->array_elements,
+                                          unsigned,
+                                          block->num_array_elements);
+         /* Mark the entire array as used. */
+         for (unsigned i = 0; i < block->num_array_elements; i++)
+            block->array_elements[i] = i;
+      }
       assert((b->num_array_elements > 0) == b->type->is_array());
 
       block_size.num_active_uniforms = 0;
