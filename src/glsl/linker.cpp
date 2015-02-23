@@ -2019,9 +2019,11 @@ assign_attribute_or_color_locations(gl_shader_program *prog,
 	 /* Reversed because we want a descending order sort below. */
 	 return r->slots - l->slots;
       }
-   } to_assign[16];
+   } to_assign[MAX2(MAX_VERTEX_GENERIC_ATTRIBS, MAX_NV_FRAGMENT_PROGRAM_INPUTS)];
 
    unsigned num_attr = 0;
+   unsigned max_attr = (target_index == MESA_SHADER_VERTEX) ?
+      MAX_VERTEX_GENERIC_ATTRIBS : MAX_NV_FRAGMENT_PROGRAM_INPUTS;
 
    foreach_in_list(ir_instruction, node, sh->ir) {
       ir_variable *const var = node->as_variable();
@@ -2181,6 +2183,13 @@ assign_attribute_or_color_locations(gl_shader_program *prog,
 	 }
 
 	 continue;
+      }
+
+      if (num_attr >= max_attr) {
+         linker_error(prog,
+                      "Number of required attribute locations "
+                      "exceeds allowed limit (limit=%d)", max_attr);
+         return false;
       }
 
       to_assign[num_attr].slots = slots;
