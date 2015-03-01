@@ -2630,7 +2630,7 @@ copytexture_error_check( struct gl_context *ctx, GLuint dimensions,
 
    rb = _mesa_get_read_renderbuffer_for_format(ctx, internalFormat);
    if (rb == NULL) {
-      _mesa_error(ctx, GL_INVALID_OPERATION,
+      _mesa_error(ctx, GL_INVALID_ENUM,
                   "glCopyTexImage%dD(read buffer)", dimensions);
       return GL_TRUE;
    }
