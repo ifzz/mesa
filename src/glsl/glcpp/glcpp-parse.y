@@ -180,7 +180,7 @@ add_builtin_define(glcpp_parser_t *parser, const char *name, int value);
          * (such as the <HASH> and <DEFINE> start conditions in the lexer). */
 %token DEFINED ELIF_EXPANDED HASH_TOKEN DEFINE_TOKEN FUNC_IDENTIFIER OBJ_IDENTIFIER ELIF ELSE ENDIF ERROR_TOKEN IF IFDEF IFNDEF LINE PRAGMA UNDEF VERSION_TOKEN GARBAGE IDENTIFIER IF_EXPANDED INTEGER INTEGER_STRING LINE_EXPANDED NEWLINE OTHER PLACEHOLDER SPACE PLUS_PLUS MINUS_MINUS
 %token PASTE
-%type <ival> INTEGER operator SPACE integer_constant
+%type <ival> INTEGER operator SPACE integer_constant constant_integral_expression
 %type <expression_value> expression
 %type <str> IDENTIFIER FUNC_IDENTIFIER OBJ_IDENTIFIER INTEGER_STRING OTHER ERROR_TOKEN PRAGMA
 %type <string_list> identifier_list
@@ -229,7 +229,7 @@ expanded_line:
 			glcpp_error(& @1, parser, "undefined macro %s in expression (illegal in GLES)", $2.undefined_macro);
 		_glcpp_parser_skip_stack_change_if (parser, & @1, "elif", $2.value);
 	}
-|	LINE_EXPANDED integer_constant NEWLINE {
+|	LINE_EXPANDED constant_integral_expression NEWLINE {
 		parser->has_new_line_number = 1;
 		parser->new_line_number = $2;
 		ralloc_asprintf_rewrite_tail (&parser->output,
@@ -237,15 +237,53 @@ expanded_line:
 					      "#line %" PRIiMAX "\n",
 					      $2);
 	}
-|	LINE_EXPANDED integer_constant integer_constant NEWLINE {
+|	LINE_EXPANDED constant_integral_expression SPACE constant_integral_expression NEWLINE {
 		parser->has_new_line_number = 1;
 		parser->new_line_number = $2;
 		parser->has_new_source_number = 1;
-		parser->new_source_number = $3;
+		parser->new_source_number = $4;
 		ralloc_asprintf_rewrite_tail (&parser->output,
 					      &parser->output_length,
 					      "#line %" PRIiMAX " %" PRIiMAX "\n",
-					      $2, $3);
+					      $2, $4);
+	}
+;
+
+constant_integral_expression:
+        integer_constant {
+                $$ = $1;
+	}
+|       constant_integral_expression '+' constant_integral_expression {
+		$$ = $1 + $3;
+	}
+|       constant_integral_expression '-' constant_integral_expression {
+		$$ = $1 - $3;
+	}
+|       constant_integral_expression '*' constant_integral_expression {
+		$$ = $1 * $3;
+	}
+|       constant_integral_expression '/' constant_integral_expression {
+                if ($3 == 0)
+                        yyerror (&@1, parser,
+                                 "division by 0 in preprocessor directive");
+                else
+		        $$ = $1 / $3;
+        }
+|       constant_integral_expression '%' constant_integral_expression {
+                if ($3 == 0)
+                        yyerror (&@1, parser,
+                                 "zero modulus in preprocessor directive");
+                else
+                        $$ = $1 % $3;
+	}
+|	'+' constant_integral_expression %prec UNARY {
+		$$ = $2;
+	}
+|	'-' constant_integral_expression %prec UNARY {
+		$$ = -$2;
+	}
+|	'(' constant_integral_expression ')' {
+		$$ = $2;
 	}
 ;
 
@@ -2275,14 +2313,45 @@ glcpp_parser_lex_from (glcpp_parser_t *parser, token_list_t *list)
 	assert (parser->lex_from_list == NULL);
 
 	/* Copy list, eliminating any space tokens. */
+
 	parser->lex_from_list = _token_list_create (parser);
 
-	for (node = list->head; node; node = node->next) {
-		if (node->token->type == SPACE)
-			continue;
-		_token_list_append (parser->lex_from_list, node->token);
-	}
+        /* If the list comes from a LINE_EXPANDED, do not remove the
+         * SPACE tokens that act as parameter separator, i.e., SPACE tokens
+         * inside parentheses will be removed, consecutive SPACE tokens
+         * outside parentheses will be reduced to one.
+         */
+        if (list->head->token->type == LINE_EXPANDED) {
+                int bracket_num = 0;
+                bool separator = false;
 
+                _token_list_append (parser->lex_from_list, list->head->token);
+
+                for (node = list->head->next; node; node = node->next) {
+                        token_t *token = node->token;
+
+                        if (token->type == '(')
+                                bracket_num++;
+                        if (token->type == ')')
+                                bracket_num--;
+
+                        if (token->type == SPACE) {
+                                if (bracket_num > 0 || separator)
+                                        continue;
+                                separator = true;
+                        } else {
+                                separator = false;
+                        }
+
+                        _token_list_append (parser->lex_from_list, token);
+                }
+        } else {
+                for (node = list->head; node; node = node->next) {
+                        if (node->token->type == SPACE)
+                                continue;
+                        _token_list_append (parser->lex_from_list, node->token);
+                }
+        }
 	ralloc_free (list);
 
 	parser->lex_from_node = parser->lex_from_list->head;
