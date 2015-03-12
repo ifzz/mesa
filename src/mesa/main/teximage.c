@@ -4598,7 +4598,7 @@ compressed_subtexture_target_check(struct gl_context *ctx, GLenum target,
        *    non-zero, or the effective target for the texture is not
        *    TEXTURE_2D_ARRAY."
        */
-      if (target != GL_TEXTURE_2D_ARRAY) {
+      if (targetOK && target != GL_TEXTURE_2D_ARRAY) {
          bool invalidformat;
          switch (format) {
             /* These came from _mesa_is_compressed_format in glformats.c. */
