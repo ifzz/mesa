@@ -2530,6 +2530,24 @@ texsubimage_error_check(struct gl_context *ctx, GLuint dimensions,
       return GL_TRUE;
    }
 
+   if (_mesa_is_gles3(ctx)) {
+      /* Validation of format and type for ES3 has to be done here
+       * after the texture image is resolved, because the internal
+       * format is needed for the verification
+       */
+      err = _mesa_es3_error_check_format_and_type(ctx, format, type,
+                                                  texImage->InternalFormat);
+      if (err != GL_NO_ERROR) {
+         _mesa_error(ctx, err,
+                     "%s(incompatible format = %s, type = %s, "
+                     "internalformat = %s)",
+                     callerName, _mesa_lookup_enum_by_nr(format),
+                     _mesa_lookup_enum_by_nr(type),
+                     _mesa_lookup_enum_by_nr(texImage->InternalFormat));
+         return GL_TRUE;
+      }
+   }
+
    if (error_check_subtexture_dimensions(ctx, dimensions,
                                          texImage, xoffset, yoffset, zoffset,
                                          width, height, depth, callerName)) {
@@ -3568,6 +3586,13 @@ texsubimage(struct gl_context *ctx, GLuint dims, GLenum target, GLint level,
 {
    struct gl_texture_object *texObj;
    struct gl_texture_image *texImage;
+
+   /* check target (proxies not allowed) */
+   if (!legal_texsubimage_target(ctx, dims, target, false)) {
+      _mesa_error(ctx, GL_INVALID_ENUM, "glTexSubImage%uD(target=%s)",
+                  dims, _mesa_lookup_enum_by_nr(target));
+      return;
+   }
 
    texObj = _mesa_get_current_tex_object(ctx, target);
    if (!texObj)
