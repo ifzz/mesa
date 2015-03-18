@@ -39,19 +39,16 @@
 #include "hash.h"
 
 /**
- * Implements glGenerateMipmap and glGenerateTextureMipmap.
- * Generates all the mipmap levels below the base level.
+ * Validates the target argument in glGenerateMipmap and
+ * glGenerateTextureMipmap.
+ * Returns true if target is valid, otherwise returns false and sets GL error
+ * accordingly.
  */
-void
-_mesa_generate_texture_mipmap(struct gl_context *ctx,
-                              struct gl_texture_object *texObj, GLenum target,
-                              bool dsa)
+static bool
+generate_mipmap_is_valid_target(struct gl_context *ctx, GLenum target,
+                                const char *caller)
 {
-   struct gl_texture_image *srcImage;
-   GLboolean error;
-   const char *suffix = dsa ? "Texture" : "";
-
-   FLUSH_VERTICES(ctx, 0);
+  bool error;
 
    switch (target) {
    case GL_TEXTURE_1D:
@@ -78,14 +75,31 @@ _mesa_generate_texture_mipmap(struct gl_context *ctx,
               !ctx->Extensions.ARB_texture_cube_map_array;
       break;
    default:
-      error = GL_TRUE;
+      error = true;
    }
 
    if (error) {
-      _mesa_error(ctx, GL_INVALID_ENUM, "glGenerate%sMipmap(target=%s)",
-                  suffix, _mesa_lookup_enum_by_nr(target));
-      return;
+      _mesa_error(ctx, GL_INVALID_ENUM, "%s(target=%s)",
+                  caller, _mesa_lookup_enum_by_nr(target));
+      return false;
    }
+
+   return true;
+}
+
+/**
+ * Implements glGenerateMipmap and glGenerateTextureMipmap.
+ * Generates all the mipmap levels below the base level.
+ */
+void
+_mesa_generate_texture_mipmap(struct gl_context *ctx,
+                              struct gl_texture_object *texObj, GLenum target,
+                              bool dsa)
+{
+   struct gl_texture_image *srcImage;
+   const char *suffix = dsa ? "Texture" : "";
+
+   FLUSH_VERTICES(ctx, 0);
 
    if (texObj->BaseLevel >= texObj->MaxLevel) {
       /* nothing to do */
@@ -142,6 +156,9 @@ _mesa_GenerateMipmap(GLenum target)
    struct gl_texture_object *texObj;
    GET_CURRENT_CONTEXT(ctx);
 
+   if (!generate_mipmap_is_valid_target(ctx, target, "glGenerateMipmap"))
+      return;
+
    texObj = _mesa_get_current_tex_object(ctx, target);
    if (!texObj)
       return;
@@ -161,6 +178,11 @@ _mesa_GenerateTextureMipmap(GLuint texture)
    texObj = _mesa_lookup_texture_err(ctx, texture, "glGenerateTextureMipmap");
    if (!texObj)
       return;
+
+   if (!generate_mipmap_is_valid_target(ctx, texObj->Target,
+                                        "glGenerateTextureMipmap")) {
+      return;
+   }
 
    _mesa_generate_texture_mipmap(ctx, texObj, texObj->Target, true);
 }
