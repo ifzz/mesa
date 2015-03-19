@@ -294,8 +294,15 @@ compute_version(const struct gl_extensions *extensions,
                               extensions->ARB_vertex_type_2_10_10_10_rev &&
                               extensions->EXT_texture_swizzle);
                               /* ARB_sampler_objects is always enabled in mesa */
+   const GLboolean ver_4_3 = (ver_3_3 &&
+                              consts->GLSLVersion >= 430 &&
+                              extensions->ARB_shader_storage_buffer_object);
 
-   if (ver_3_3) {
+   if (ver_4_3) {
+      major = 4;
+      minor = 3;
+   }
+   else if (ver_3_3) {
       major = 3;
       minor = 3;
    }
