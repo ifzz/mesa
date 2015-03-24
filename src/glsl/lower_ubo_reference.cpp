@@ -229,7 +229,8 @@ lower_ubo_reference_visitor::handle_rvalue(ir_rvalue **rvalue)
       return;
 
    ir_variable *var = deref->variable_referenced();
-   if (!var || !var->is_in_uniform_block())
+   if (!var ||
+       !(var->is_in_uniform_block() || var->is_in_shader_storage_block()))
       return;
 
    mem_ctx = ralloc_parent(*rvalue);

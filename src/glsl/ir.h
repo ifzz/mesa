@@ -445,8 +445,15 @@ public:
     */
    inline bool is_in_uniform_block() const
    {
-      return (this->data.mode == ir_var_uniform ||
-              this->data.mode == ir_var_buffer) && this->interface_type != NULL;
+      return this->data.mode == ir_var_uniform && this->interface_type != NULL;
+   }
+
+   /**
+    * Determine whether or not a variable is part of a uniform block.
+    */
+   inline bool is_in_shader_storage_block() const
+   {
+      return this->data.mode == ir_var_buffer && this->interface_type != NULL;
    }
 
    /**
