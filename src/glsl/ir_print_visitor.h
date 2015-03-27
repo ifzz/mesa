@@ -72,6 +72,7 @@ public:
    virtual void visit(ir_emit_vertex *);
    virtual void visit(ir_end_primitive *);
    virtual void visit(ir_barrier *);
+   virtual void visit(ir_ssbo_store *);
    /*@}*/
 
 private:
