@@ -263,6 +263,7 @@ public:
    virtual void visit(ir_emit_vertex *);
    virtual void visit(ir_end_primitive *);
    virtual void visit(ir_barrier *);
+   virtual void visit(ir_ssbo_store *);
    /*@}*/
 
    src_reg result;
@@ -2123,6 +2124,12 @@ void
 ir_to_mesa_visitor::visit(ir_barrier *)
 {
    unreachable("GLSL barrier() not supported.");
+}
+
+void
+ir_to_mesa_visitor::visit(ir_ssbo_store *)
+{
+   assert(!"Shader storage buffer object (SSBO) writes not supported.");
 }
 
 ir_to_mesa_visitor::ir_to_mesa_visitor()
