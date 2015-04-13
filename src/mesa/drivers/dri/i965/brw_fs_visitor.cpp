@@ -1259,6 +1259,10 @@ fs_visitor::visit(ir_expression *ir)
       emit_lrp(this->result, op[0], op[1], op[2]);
       break;
 
+   case ir_triop_ssbo_unsized_array_length:
+      unreachable("not reached: not implemented");
+      break;
+
    case ir_triop_csel:
    case ir_unop_interpolate_at_centroid:
    case ir_binop_interpolate_at_offset:
@@ -1278,6 +1282,9 @@ fs_visitor::visit(ir_expression *ir)
    case ir_unop_frexp_sig:
    case ir_unop_frexp_exp:
       unreachable("fp64 todo");
+      break;
+   case ir_unop_ssbo_unsized_array_length:
+      unreachable("not reached: should be handled by lower_ubo_reference");
       break;
    }
 }
