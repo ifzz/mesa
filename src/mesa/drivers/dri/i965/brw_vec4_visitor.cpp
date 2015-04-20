@@ -1940,7 +1940,6 @@ vec4_visitor::visit(ir_expression *ir)
 
       /* array.length() =
           max((buffer_object_size - offset_of_array) / stride_of_array, 0) */
-      /* TODO: Optimize these instructions */
       emit(MUL(buffer_size, src_reg(buffer_size), brw_imm_d(16)));
       emit(ADD(buffer_size, src_reg(buffer_size), brw_imm_d(-const_offset)));
 
@@ -1952,14 +1951,7 @@ vec4_visitor::visit(ir_expression *ir)
                 temp,
                 src_reg(buffer_size),
                 stride);
-
-      emit(MOV(result_dst, brw_imm_d(0)));
-      emit(CMP(dst_null_f(), src_reg(temp), brw_imm_d(0), BRW_CONDITIONAL_G));
-      emit(IF(BRW_PREDICATE_NORMAL));
-      {
-         emit(MOV(result_dst, src_reg(temp)));
-      }
-      emit(BRW_OPCODE_ENDIF);
+      emit_minmax(BRW_CONDITIONAL_GE, result_dst, src_reg(temp), brw_imm_d(0));
       break;
    }
 
