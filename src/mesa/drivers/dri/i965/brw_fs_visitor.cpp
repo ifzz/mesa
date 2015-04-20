@@ -1318,15 +1318,11 @@ fs_visitor::visit(ir_expression *ir)
 
       assert(shader->base.UniformBlocks[ubo_index].IsBuffer);
 
-      /* TODO: Optimize this code */
-      fs_reg *sources = ralloc_array(mem_ctx, fs_reg, MAX_SAMPLER_MESSAGE_SIZE);
-      for (int i = 0; i < MAX_SAMPLER_MESSAGE_SIZE; i++) {
-         sources[i] = vgrf(glsl_type::float_type);
-      }
-       int length = 0;
+      int length = 0;
+      fs_reg source = vgrf(glsl_type::float_type);
 
       /* Set LOD = 0 */
-      emit(MOV(retype(sources[length], BRW_REGISTER_TYPE_UD), fs_reg(0)));
+      emit(MOV(retype(source, BRW_REGISTER_TYPE_UD), fs_reg(0)));
       length++;
 
       int mlen;
@@ -1336,9 +1332,9 @@ fs_visitor::visit(ir_expression *ir)
       else
          mlen = length * reg_width;
 
-       fs_reg src_payload = fs_reg(GRF, alloc.allocate(mlen),
+      fs_reg src_payload = fs_reg(GRF, alloc.allocate(mlen),
                                    BRW_REGISTER_TYPE_F);
-      emit(LOAD_PAYLOAD(src_payload, sources, length));
+      emit(LOAD_PAYLOAD(src_payload, &source, length));
 
       fs_reg surf_index = fs_reg(prog_data->binding_table.ubo_start + ubo_index);
       fs_reg buffer_size = vgrf(glsl_type::int_type);
