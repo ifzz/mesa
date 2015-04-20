@@ -1361,6 +1361,7 @@ GLAPI GLuint APIENTRY glGetUniformBlockIndex (GLuint program, const GLchar *unif
 GLAPI void APIENTRY glGetActiveUniformBlockiv (GLuint program, GLuint uniformBlockIndex, GLenum pname, GLint *params);
 GLAPI void APIENTRY glGetActiveUniformBlockName (GLuint program, GLuint uniformBlockIndex, GLsizei bufSize, GLsizei *length, GLchar *uniformBlockName);
 GLAPI void APIENTRY glUniformBlockBinding (GLuint program, GLuint uniformBlockIndex, GLuint uniformBlockBinding);
+GLAPI void APIENTRY glShaderStorageBlockBinding (GLuint program, GLuint shaderStorageBlockIndex, GLuint shaderStorageBinding);
 #endif
 #endif /* GL_VERSION_3_1 */
 
