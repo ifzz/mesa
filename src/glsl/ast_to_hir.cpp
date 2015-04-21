@@ -2116,8 +2116,7 @@ validate_binding_qualifier(struct _mesa_glsl_parse_state *state,
    unsigned elements = var->type->is_array() ? var->type->length : 1;
    unsigned max_index = qual->binding + elements - 1;
 
-   if (var->type->is_interface() ||
-      (var->get_interface_type() && var->get_interface_type()->is_interface())) {
+   if (var->type->is_interface()) {
       /* UBOs.  From page 60 of the GLSL 4.20 specification:
        * "If the binding point for any uniform block instance is less than zero,
        *  or greater than or equal to the implementation-dependent maximum
