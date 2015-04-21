@@ -5982,11 +5982,8 @@ ast_interface_block::hir(exec_list *instructions,
           * The UBO declaration itself doesn't get an ir_variable unless it
           * has an instance name.  This is ugly.
           */
-         if (this->layout.flags.q.explicit_binding &&
-             validate_binding_qualifier(state, &loc, var, &this->layout)) {
-               var->data.explicit_binding = true;
-               var->data.binding = this->layout.binding;
-         }
+         var->data.explicit_binding = this->layout.flags.q.explicit_binding;
+         var->data.binding = this->layout.binding;
 
          if (var->type->is_unsized_array()) {
             var->data.from_unsized_array = true;
