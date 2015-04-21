@@ -5788,6 +5788,16 @@ ast_interface_block::hir(exec_list *instructions,
                        this->block_name, iface_type_name);
    }
 
+   /* Check SSBO size is lower than maximum supported size for SSBO */
+   if (var_mode == ir_var_buffer &&
+       (block_type->std140_size(this->layout.flags.q.row_major) >
+        state->ctx->Const.MaxShaderStorageBlockSize)) {
+      YYLTYPE loc = this->get_location();
+      _mesa_glsl_error(&loc, state, "interface block `%s' of size %d > %d",
+                       this->block_name,
+                       block_type->std140_size(this->layout.flags.q.row_major),
+                       state->ctx->Const.MaxShaderStorageBlockSize);
+   }
    /* Since interface blocks cannot contain statements, it should be
     * impossible for the block to generate any instructions.
     */
