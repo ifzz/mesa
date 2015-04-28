@@ -5695,9 +5695,18 @@ ast_process_structure_or_interface_block(exec_list *instructions,
                                          enum glsl_matrix_layout matrix_layout,
                                          bool allow_reserved_names,
                                          ir_variable_mode var_mode,
-                                         enum glsl_interface_packing packing)
+                                         enum glsl_interface_packing packing,
+                                         ast_type_qualifier *layout)
 {
    unsigned decl_count = 0;
+
+   /* For blocks that accept memory qualifiers (i.e. shader storage), verify
+    * that we don't have incompatible qualifiers
+    */
+   if (layout && layout->flags.q.read_only && layout->flags.q.write_only) {
+      _mesa_glsl_error(&loc, state,
+                       "Interface block sets both readonly and writeonly");
+   }
 
    /* Make an initial pass over the list of fields to determine how
     * many there are.  Each element in this list is an ast_declarator_list.
@@ -5870,6 +5879,44 @@ ast_process_structure_or_interface_block(exec_list *instructions,
                    || fields[i].matrix_layout == GLSL_MATRIX_LAYOUT_COLUMN_MAJOR);
          }
 
+         /* Image qualifiers are allowed on buffer variables, which can only
+          * be defined inside shader storage buffer objects
+          */
+         if (layout && var_mode == ir_var_shader_storage) {
+            if (qual->flags.q.read_only && qual->flags.q.write_only) {
+               _mesa_glsl_error(&loc, state,
+                                "buffer variable `%s' can't be "
+                                "readonly and writeonly.", fields[i].name);
+            }
+
+            /* For readonly and writeonly qualifiers the field definition,
+             * if set, overwrites the layout qualifier.
+             */
+            bool read_only = layout->flags.q.read_only;
+            bool write_only = layout->flags.q.write_only;
+
+            if (qual->flags.q.read_only) {
+               read_only = true;
+               write_only = false;
+            } else if (qual->flags.q.write_only) {
+               read_only = false;
+               write_only = true;
+            }
+
+            fields[i].image_read_only = read_only;
+            fields[i].image_write_only = write_only;
+
+            /* For other qualifiers, we set the flag if either the layout
+             * qualifier or the field qualifier are set
+             */
+            fields[i].image_coherent = qual->flags.q.coherent ||
+                                        layout->flags.q.coherent;
+            fields[i].image_volatile = qual->flags.q._volatile ||
+                                        layout->flags.q._volatile;
+            fields[i].image_restrict = qual->flags.q.restrict_flag ||
+                                        layout->flags.q.restrict_flag;
+         }
+
          i++;
       }
    }
@@ -5925,7 +5972,8 @@ ast_struct_specifier::hir(exec_list *instructions,
                                                GLSL_MATRIX_LAYOUT_INHERITED,
                                                false /* allow_reserved_names */,
                                                ir_var_auto,
-                                               GLSL_INTERFACE_PACKING_STD140);
+                                               GLSL_INTERFACE_PACKING_STD140,
+                                               NULL);
 
    validate_identifier(this->name, loc, state);
 
@@ -6081,7 +6129,8 @@ ast_interface_block::hir(exec_list *instructions,
                                                matrix_layout,
                                                redeclaring_per_vertex,
                                                var_mode,
-                                               packing);
+                                               packing,
+                                               &this->layout);
 
    state->struct_specifier_depth--;
 
@@ -6465,6 +6514,14 @@ ast_interface_block::hir(exec_list *instructions,
          }
 
          var->data.stream = this->layout.stream;
+
+         if (var->data.mode == ir_var_shader_storage) {
+            var->data.image_read_only = fields[i].image_read_only;
+            var->data.image_write_only = fields[i].image_write_only;
+            var->data.image_coherent = fields[i].image_coherent;
+            var->data.image_volatile = fields[i].image_volatile;
+            var->data.image_restrict = fields[i].image_restrict;
+         }
 
          /* Examine var name here since var may get deleted in the next call */
          bool var_is_gl_id = is_gl_identifier(var->name);
