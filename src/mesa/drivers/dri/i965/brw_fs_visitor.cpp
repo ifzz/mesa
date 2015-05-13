@@ -2774,7 +2774,8 @@ fs_visitor::emit_bool_to_cond_code(ir_rvalue *ir)
 {
    ir_expression *expr = ir->as_expression();
 
-   if (!expr || expr->operation == ir_binop_ubo_load) {
+   if (!expr || expr->operation == ir_binop_ubo_load ||
+       expr->operation == ir_binop_ssbo_load) {
       ir->accept(this);
 
       fs_inst *inst = emit(AND(reg_null_d, this->result, fs_reg(1)));
@@ -2906,7 +2907,8 @@ fs_visitor::emit_if_gen6(ir_if *ir)
 {
    ir_expression *expr = ir->condition->as_expression();
 
-   if (expr && expr->operation != ir_binop_ubo_load) {
+   if (expr && expr->operation != ir_binop_ubo_load &&
+       expr->operation != ir_binop_ssbo_load) {
       fs_reg op[3];
       fs_inst *inst;
       fs_reg temp;
