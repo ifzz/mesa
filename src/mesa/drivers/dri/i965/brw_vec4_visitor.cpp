@@ -789,7 +789,8 @@ vec4_visitor::emit_bool_to_cond_code(ir_rvalue *ir,
 
    *predicate = BRW_PREDICATE_NORMAL;
 
-   if (expr && expr->operation != ir_binop_ubo_load) {
+   if (expr && expr->operation != ir_binop_ubo_load &&
+       expr->operation != ir_binop_ssbo_load) {
       src_reg op[3];
       vec4_instruction *inst;
 
@@ -937,7 +938,8 @@ vec4_visitor::emit_if_gen6(ir_if *ir)
 {
    ir_expression *expr = ir->condition->as_expression();
 
-   if (expr && expr->operation != ir_binop_ubo_load) {
+   if (expr && expr->operation != ir_binop_ubo_load &&
+       expr->operation != ir_binop_ssbo_load) {
       src_reg op[3];
       dst_reg temp;
 
