@@ -1198,6 +1198,10 @@ fs_visitor::setup_uniform_values(ir_variable *ir)
          continue;
       }
 
+      /* Don't process SSBOs, they are not actually uniforms */
+      if (storage->is_shader_storage)
+         continue;
+
       unsigned slots = storage->type->component_slots();
       if (storage->array_elements)
          slots *= storage->array_elements;

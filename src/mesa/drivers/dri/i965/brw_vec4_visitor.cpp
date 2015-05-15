@@ -698,6 +698,10 @@ vec4_visitor::setup_uniform_values(ir_variable *ir)
          continue;
       }
 
+      /* Don't process SSBOs, they are not actually uniforms */
+      if (storage->is_shader_storage)
+         continue;
+
       gl_constant_value *components = storage->storage;
       unsigned vector_count = (MAX2(storage->array_elements, 1) *
                                storage->type->matrix_columns);
