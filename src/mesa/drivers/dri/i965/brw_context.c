@@ -549,6 +549,13 @@ brw_initialize_context_constants(struct brw_context *brw)
    ctx->Const.TextureBufferOffsetAlignment = 16;
    ctx->Const.MaxTextureBufferSize = 128 * 1024 * 1024;
 
+   ctx->Const.Program[MESA_SHADER_FRAGMENT].MaxShaderStorageBlocks = 12;
+   ctx->Const.Program[MESA_SHADER_VERTEX].MaxShaderStorageBlocks = 12;
+   ctx->Const.Program[MESA_SHADER_GEOMETRY].MaxShaderStorageBlocks = 12;
+   ctx->Const.Program[MESA_SHADER_COMPUTE].MaxShaderStorageBlocks = 12;
+   ctx->Const.MaxCombinedShaderStorageBlocks = 12 * 4;
+   ctx->Const.MaxShaderStorageBufferBindings = 48;
+
    if (brw->gen >= 6) {
       ctx->Const.MaxVarying = 32;
       ctx->Const.Program[MESA_SHADER_VERTEX].MaxOutputComponents = 128;
