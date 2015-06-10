@@ -311,8 +311,6 @@ namespace brw {
       instruction *
       emit(instruction *inst) const
       {
-         assert(inst->exec_size == dispatch_width() ||
-                force_writemask_all);
          assert(_group == 0 || _group == 8);
 
          inst->force_sechalf = (_group == 8);
