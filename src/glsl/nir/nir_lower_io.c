@@ -381,6 +381,8 @@ nir_lower_io_block(nir_block *block, void *void_state)
          offset += intrin->variables[0]->var->data.driver_location;
 
          store->const_index[0] = offset;
+         store->const_index[1] = intrin->variables[0]->var->data.location +
+            (offset - intrin->variables[0]->var->data.driver_location);
 
          nir_src_copy(&store->src[0], &intrin->src[0], state->mem_ctx);
 
