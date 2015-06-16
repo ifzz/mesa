@@ -406,6 +406,7 @@ public:
    virtual void nir_emit_texture(nir_tex_instr *instr);
 
    src_reg *nir_inputs;
+   brw_reg_type *nir_output_types;
 
 protected:
    void emit_vertex();
