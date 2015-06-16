@@ -505,10 +505,26 @@ vec4_visitor::nir_emit_intrinsic(nir_intrinsic_instr *instr)
    }
 
    case nir_intrinsic_store_output_indirect:
+      has_indirect = true;
       /* fallthrough */
-   case nir_intrinsic_store_output:
-      /* @TODO: Not yet implemented */
+   case nir_intrinsic_store_output: {
+      int offset = instr->const_index[0];
+      int output = instr->const_index[1];
+
+      src = get_nir_src(instr->src[0], nir_output_types[offset],
+                        instr->num_components);
+      dest = dst_reg(src);
+
+      dest.writemask = brw_writemask_for_size(instr->num_components);
+
+      if (has_indirect) {
+         dest.reladdr = new(mem_ctx) src_reg(get_nir_src(instr->src[1],
+                                                         BRW_REGISTER_TYPE_D,
+                                                         1));
+      }
+      output_reg[output] = dest;
       break;
+   }
 
    case nir_intrinsic_load_vertex_id:
       unreachable("should be lowered by lower_vertex_id()");
