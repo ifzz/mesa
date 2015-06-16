@@ -407,6 +407,7 @@ public:
 
    src_reg *nir_inputs;
    brw_reg_type *nir_output_types;
+   unsigned *nir_uniform_driver_location;
 
 protected:
    void emit_vertex();
