@@ -1962,6 +1962,19 @@ brw_vs_emit(struct brw_context *brw,
       vec4_vs_visitor v(brw->intelScreen->compiler,
                         c, prog_data, prog, mem_ctx, st_index,
                         !_mesa_is_gles3(&brw->ctx));
+
+      if (brw->intelScreen->compiler->glsl_compiler_options[MESA_SHADER_VERTEX].NirOptions != NULL &&
+          !c->vp->program.Base.nir) {
+         /* Normally we generate NIR in LinkShader() or
+          * ProgramStringNotify(), but Mesa's fixed-function vertex program
+          * handling doesn't notify the driver at all.  Just do it here, at
+          * the last minute, even though it's lame.
+          */
+         assert(c->vp->program.Base.Id == 0 && prog == NULL);
+         c->vp->program.Base.nir =
+            brw_create_nir(brw, NULL, &c->vp->program.Base, MESA_SHADER_VERTEX);
+      }
+
       if (!v.run(brw_select_clip_planes(&brw->ctx))) {
          if (prog) {
             prog->LinkStatus = false;
