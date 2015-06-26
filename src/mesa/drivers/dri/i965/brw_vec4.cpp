@@ -1753,21 +1753,20 @@ vec4_visitor::run(gl_clip_plane *clip_planes)
    /* Generate VS IR for main().  (the visitor only descends into
     * functions called "main").
     */
-   if (shader) {
-      if (should_use_vec4_nir()) {
-         assert(prog->nir != NULL);
-         emit_nir_code();
-         if (failed)
-            return false;
-      } else {
+   if (should_use_vec4_nir()) {
+      assert(prog->nir != NULL);
+      emit_nir_code();
+      if (failed)
+         return false;
+   } else if (shader) {
          /* Generate VS IR for main().  (the visitor only descends into
           * functions called "main").
           */
-         visit_instructions(shader->base.ir);
-      }
+      visit_instructions(shader->base.ir);
    } else {
       emit_program_code();
    }
+
    base_ir = NULL;
 
    if (key->userclip_active && !prog->UsesClipDistanceOut)
