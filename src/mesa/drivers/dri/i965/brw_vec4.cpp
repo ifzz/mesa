@@ -1785,7 +1785,11 @@ vec4_visitor::run(gl_clip_plane *clip_planes)
    if (shader) {
       move_grf_array_access_to_scratch();
       move_uniform_array_access_to_pull_constants();
-   } else {
+   } else if (should_use_vec4_nir()) {
+      /* When NIR code path is activated, we can have
+         array accesses to uniforms that have reladdr different from NULL */
+      move_uniform_array_access_to_pull_constants();
+   }else {
       /* The ARB_vertex_program frontend emits pull constant loads directly
        * rather than using reladdr, so we don't need to walk through all the
        * instructions looking for things to move.  There isn't anything.
