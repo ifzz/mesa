@@ -1919,18 +1919,20 @@ brw_vs_emit(struct brw_context *brw,
    if (unlikely(INTEL_DEBUG & DEBUG_VS))
       brw_dump_ir("vertex", prog, &shader->base, &vp->Base);
 
-   if (brw->intelScreen->compiler->scalar_vs) {
-      if (!vp->Base.nir) {
-         /* Normally we generate NIR in LinkShader() or
-          * ProgramStringNotify(), but Mesa's fixed-function vertex program
-          * handling doesn't notify the driver at all.  Just do it here, at
-          * the last minute, even though it's lame.
-          */
-         assert(vp->Base.Id == 0 && prog == NULL);
-         vp->Base.nir =
-            brw_create_nir(brw, NULL, &vp->Base, MESA_SHADER_VERTEX);
-      }
+   if (!vp->Base.nir &&
+       (brw->intelScreen->compiler->scalar_vs ||
+        brw->intelScreen->compiler->glsl_compiler_options[MESA_SHADER_VERTEX].NirOptions != NULL)) {
+      /* Normally we generate NIR in LinkShader() or
+       * ProgramStringNotify(), but Mesa's fixed-function vertex program
+       * handling doesn't notify the driver at all.  Just do it here, at
+       * the last minute, even though it's lame.
+       */
+      assert(vp->Base.Id == 0 && prog == NULL);
+      vp->Base.nir =
+         brw_create_nir(brw, NULL, &vp->Base, MESA_SHADER_VERTEX);
+   }
 
+   if (brw->intelScreen->compiler->scalar_vs) {
       prog_data->base.dispatch_mode = DISPATCH_MODE_SIMD8;
 
       fs_visitor v(brw->intelScreen->compiler, brw,
