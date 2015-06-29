@@ -181,6 +181,8 @@ vec4_visitor::nir_setup_uniforms(nir_shader *shader)
        * leave as it is, as it is more similar to the one we have in the vec4-vp visitor
        */
       struct gl_program_parameter_list *plist = prog->Parameters;
+      unsigned offset = 0;
+      nir_variable *var = (nir_variable *) shader->uniforms.get_head();
 
       for (unsigned p = 0; p < plist->NumParameters; p++) {
          unsigned components = plist->Parameters[p].Size;
@@ -197,6 +199,13 @@ vec4_visitor::nir_setup_uniforms(nir_shader *shader)
             stage_prog_data->param[this->uniforms * 4 + i] = i >= components
                ? 0 : &plist->ParameterValues[p][i];
          }
+
+         int uniform_offset = var->data.driver_location + offset;
+         nir_uniform_offset[uniform_offset] = this->uniforms;
+         offset++;
+
+         nir_uniform_driver_location[this->uniforms] = var->data.driver_location;
+
          this->uniforms++; /* counted in vec4 units */
       }
    }
