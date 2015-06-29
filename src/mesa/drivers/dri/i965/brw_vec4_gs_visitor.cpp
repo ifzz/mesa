@@ -473,7 +473,7 @@ vec4_gs_visitor::set_stream_control_data_bits(unsigned stream_id)
 }
 
 void
-vec4_gs_visitor::visit(ir_emit_vertex *ir)
+vec4_gs_visitor::gs_emit_vertex(int stream_id)
 {
    this->current_annotation = "emit vertex: safety check";
 
@@ -487,7 +487,7 @@ vec4_gs_visitor::visit(ir_emit_vertex *ir)
     * be recorded by transform feedback, we can simply discard all geometry
     * bound to these streams when transform feedback is disabled.
     */
-   if (ir->stream_id() > 0 && shader_prog->TransformFeedback.NumVarying == 0)
+   if (stream_id > 0 && shader_prog->TransformFeedback.NumVarying == 0)
       return;
 
    /* To ensure that we don't output more vertices than the shader specified
@@ -558,7 +558,7 @@ vec4_gs_visitor::visit(ir_emit_vertex *ir)
           c->prog_data.control_data_format ==
              GEN7_GS_CONTROL_DATA_FORMAT_GSCTL_SID) {
           this->current_annotation = "emit vertex: Stream control data bits";
-          set_stream_control_data_bits(ir->stream_id());
+          set_stream_control_data_bits(stream_id);
       }
 
       this->current_annotation = "emit vertex: increment vertex count";
@@ -571,7 +571,13 @@ vec4_gs_visitor::visit(ir_emit_vertex *ir)
 }
 
 void
-vec4_gs_visitor::visit(ir_end_primitive *)
+vec4_gs_visitor::visit(ir_emit_vertex *ir)
+{
+   gs_emit_vertex(ir->stream_id());
+}
+
+void
+vec4_gs_visitor::gs_end_primitive()
 {
    /* We can only do EndPrimitive() functionality when the control data
     * consists of cut bits.  Fortunately, the only time it isn't is when the
@@ -619,6 +625,12 @@ vec4_gs_visitor::visit(ir_end_primitive *)
     */
    emit(SHL(dst_reg(mask), one, prev_count));
    emit(OR(dst_reg(this->control_data_bits), this->control_data_bits, mask));
+}
+
+void
+vec4_gs_visitor::visit(ir_end_primitive *)
+{
+   gs_end_primitive();
 }
 
 static const unsigned *
