@@ -641,6 +641,8 @@ nir_visitor::visit(ir_call *ir)
          op = nir_intrinsic_image_atomic_comp_swap;
       } else if (strcmp(ir->callee_name(), "__intrinsic_memory_barrier") == 0) {
          op = nir_intrinsic_memory_barrier;
+      } else if (strcmp(ir->callee_name(), "__intrinsic_store_ssbo") == 0) {
+         op = nir_intrinsic_store_ssbo;
       } else {
          unreachable("not reached");
       }
@@ -730,6 +732,37 @@ nir_visitor::visit(ir_call *ir)
       }
       case nir_intrinsic_memory_barrier:
          break;
+      case nir_intrinsic_store_ssbo: {
+         exec_node *param = ir->actual_parameters.get_head();
+
+         ir_dereference *offset = (ir_dereference *)param;
+         ir_constant *const_offset = (ir_constant *)param;
+         if (const_offset->ir_type != ir_type_constant)
+            const_offset = NULL;
+         if (!const_offset) {
+            op = nir_intrinsic_store_ssbo_indirect;
+            ralloc_free(instr);
+            instr = nir_intrinsic_instr_create(shader, op);
+            instr->src[2] = evaluate_rvalue(offset);
+         }
+         instr->const_index[0] = const_offset ? const_offset->value.u[0] : 0;
+         param = param->get_next();
+
+         ir_constant *write_mask = (ir_constant *)param;
+         instr->const_index[1] = write_mask ? write_mask->value.u[0] : 0;
+         param = param->get_next();
+
+         ir_dereference *val = (ir_dereference *)param;
+         instr->src[0] = evaluate_rvalue(val);
+         instr->num_components = val->type->vector_elements;
+         param = param->get_next();
+
+         ir_dereference *block = (ir_dereference *)param;
+         instr->src[1] = evaluate_rvalue(block);
+         param = param->get_next();
+
+         break;
+      }
       default:
          unreachable("not reached");
       }
