@@ -37,6 +37,7 @@
 #include "ir_builder.h"
 #include "ir_rvalue_visitor.h"
 #include "main/macros.h"
+#include "glsl_parser_extras.h"
 
 using namespace ir_builder;
 
@@ -157,8 +158,8 @@ public:
                         ir_variable *var,
                         ir_variable *write_var,
                         unsigned write_mask);
-   ir_ssbo_store *ssbo_write(ir_rvalue *deref, ir_rvalue *offset,
-                             unsigned write_mask);
+   ir_call *ssbo_write(ir_rvalue *deref, ir_rvalue *offset,
+                       unsigned write_mask);
 
    void emit_reads_or_writes(bool is_write, ir_dereference *deref,
                              ir_variable *base_offset, unsigned int deref_offset,
@@ -502,14 +503,44 @@ lower_ubo_reference_visitor::ubo_load(const glsl_type *type,
 
 }
 
-ir_ssbo_store *
+static bool
+shader_storage_buffer_object(const _mesa_glsl_parse_state *state)
+{
+   return state->ARB_shader_storage_buffer_object_enable;
+}
+
+ir_call *
 lower_ubo_reference_visitor::ssbo_write(ir_rvalue *deref,
                                         ir_rvalue *offset,
                                         unsigned write_mask)
 {
-   ir_rvalue *block_ref = this->uniform_block->clone(mem_ctx, NULL);
-   ir_rvalue *val_ref = deref->clone(mem_ctx, NULL);
-   return new(mem_ctx) ir_ssbo_store(block_ref, offset, val_ref, write_mask);
+   exec_list param;
+   ir_variable *block_ref = new(mem_ctx) ir_variable(glsl_type::uint_type, "block_ref" , ir_var_function_in);
+   ir_variable *offset_ref = new(mem_ctx) ir_variable(glsl_type::uint_type, "offset" , ir_var_function_in);
+   const glsl_type *val_type = deref->type;
+   ir_variable *val_ref = new(mem_ctx) ir_variable(val_type, "var_ref" , ir_var_function_in);
+   ir_variable *writemask_ref = new(mem_ctx) ir_variable(glsl_type::uint_type, "write_mask" , ir_var_function_in);
+   param.push_tail(offset_ref);
+   param.push_tail(writemask_ref);
+   param.push_tail(val_ref);
+   param.push_tail(block_ref);
+
+   ir_function_signature *sig =
+      new(mem_ctx) ir_function_signature(glsl_type::void_type, shader_storage_buffer_object);
+   assert(sig);
+   sig->replace_parameters(&param);
+   sig->is_intrinsic = true;
+
+   ir_function *f = new(mem_ctx) ir_function("__intrinsic_store_ssbo");
+   f->add_signature(sig);
+
+   exec_list param2;
+   param2.push_tail(offset->clone(mem_ctx, NULL));
+   param2.push_tail(new(mem_ctx) ir_constant(write_mask));
+   param2.push_tail(deref->clone(mem_ctx, NULL));
+   param2.push_tail(this->uniform_block->clone(mem_ctx, NULL));
+   ir_call *call = new(mem_ctx) ir_call(sig, NULL, &param2);
+   return call;
 }
 
 static inline int
@@ -897,7 +928,7 @@ lower_ubo_reference_visitor::check_for_ssbo_write(ir_assignment *ir)
    /* We have a write to a buffer variable, so declare a temporary and rewrite
     * the assignment so that the temporary is the LHS.
     */
-   mem_ctx = ralloc_parent(rvalue);
+   mem_ctx = ralloc_parent(shader->ir);
 
    const glsl_type *type = rvalue->type;
    ir_variable *write_var = new(mem_ctx) ir_variable(type,
