@@ -176,8 +176,29 @@ vec4_visitor::nir_setup_uniforms(nir_shader *shader)
             nir_setup_uniform(var);
       }
    } else {
-      /* ARB_vertex_program is not supported yet */
-      assert("Not implemented");
+      /* @FIXME: Probably this code could be modified to use the info in nir_variable,
+       * instead of accessing the prog->Parameters directly. For the moment, I prefer to
+       * leave as it is, as it is more similar to the one we have in the vec4-vp visitor
+       */
+      struct gl_program_parameter_list *plist = prog->Parameters;
+
+      for (unsigned p = 0; p < plist->NumParameters; p++) {
+         unsigned components = plist->Parameters[p].Size;
+
+         /* Parameters should be either vec4 uniforms or single component
+          * constants; matrices and other larger types should have been broken
+          * down earlier.
+          */
+         assert(components <= 4);
+
+         this->uniform_size[this->uniforms] = 1; /* 1 vec4 */
+         this->uniform_vector_size[this->uniforms] = components;
+         for (unsigned i = 0; i < 4; i++) {
+            stage_prog_data->param[this->uniforms * 4 + i] = i >= components
+               ? 0 : &plist->ParameterValues[p][i];
+         }
+         this->uniforms++; /* counted in vec4 units */
+      }
    }
 }
 
