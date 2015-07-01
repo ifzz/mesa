@@ -410,6 +410,7 @@ public:
                                               const glsl_type *type) = 0;
 
    dst_reg *nir_locals;
+   dst_reg *nir_ssa_values;
    src_reg *nir_inputs;
    brw_reg_type *nir_output_types;
    unsigned *nir_uniform_driver_location;
