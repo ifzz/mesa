@@ -151,7 +151,8 @@ public:
                                 bool *is_shader_storage);
    ir_expression *ubo_load(const struct glsl_type *type,
 			   ir_rvalue *offset);
-
+   ir_call *ssbo_load(const struct glsl_type *type,
+                      ir_rvalue *offset);
 
    void check_for_ssbo_write(ir_assignment *ir);
    void write_to_memory(ir_dereference *deref,
@@ -445,7 +446,7 @@ lower_ubo_reference_visitor::handle_rvalue(ir_rvalue **rvalue)
    if (!var || !var->is_in_buffer_block())
       return;
 
-   mem_ctx = ralloc_parent(*rvalue);
+   mem_ctx = ralloc_parent(shader->ir);
 
    ir_rvalue *offset = NULL;
    unsigned const_offset;
@@ -540,6 +541,39 @@ lower_ubo_reference_visitor::ssbo_write(ir_rvalue *deref,
    param2.push_tail(deref->clone(mem_ctx, NULL));
    param2.push_tail(this->uniform_block->clone(mem_ctx, NULL));
    ir_call *call = new(mem_ctx) ir_call(sig, NULL, &param2);
+   return call;
+}
+
+ir_call *
+lower_ubo_reference_visitor::ssbo_load(const struct glsl_type *type,
+                                       ir_rvalue *offset)
+{
+   exec_list param;
+   ir_variable *offset_ref = new(mem_ctx) ir_variable(glsl_type::uint_type, "offset_ref" , ir_var_function_in);
+   ir_variable *block_ref = new(mem_ctx) ir_variable(glsl_type::uint_type, "block_ref" , ir_var_function_in);
+   param.push_tail(block_ref);
+   param.push_tail(offset_ref);
+
+   ir_function_signature *sig =
+      new(mem_ctx) ir_function_signature(type, shader_storage_buffer_object);
+   assert(sig);
+   sig->replace_parameters(&param);
+   sig->is_intrinsic = true;
+
+   ir_function *f = new(mem_ctx) ir_function("__intrinsic_load_ssbo");
+   f->add_signature(sig);
+
+   ir_variable *result =
+      new(mem_ctx) ir_variable(type, "ssbo_load_result", ir_var_temporary);
+   base_ir->insert_before(result);
+   ir_dereference_variable *deref_result =
+      new(mem_ctx) ir_dereference_variable(result);
+
+   exec_list param2;
+   param2.push_tail(this->uniform_block->clone(mem_ctx, NULL));
+   param2.push_tail(offset->clone(mem_ctx, NULL));
+
+   ir_call *call = new(mem_ctx) ir_call(sig, deref_result, &param2);
    return call;
 }
 
@@ -652,9 +686,17 @@ lower_ubo_reference_visitor::emit_reads_or_writes(bool is_write,
          add(base_offset, new(mem_ctx) ir_constant(deref_offset));
       if (is_write)
          base_ir->insert_after(ssbo_write(deref, offset, write_mask));
-      else
-         base_ir->insert_before(assign(deref->clone(mem_ctx, NULL),
-                                       ubo_load(deref->type, offset)));
+      else {
+         if (this->opcode == ir_binop_ubo_load) {
+             base_ir->insert_before(assign(deref->clone(mem_ctx, NULL),
+                                           ubo_load(deref->type, offset)));
+         } else {
+            ir_call *load_ssbo = ssbo_load(deref->type, offset);
+            base_ir->insert_before(load_ssbo);
+            ir_rvalue *value = load_ssbo->return_deref->as_rvalue()->clone(mem_ctx, NULL);
+            base_ir->insert_before(assign(deref->clone(mem_ctx, NULL), value));
+         }
+      }
    } else {
       unsigned N = deref->type->is_double() ? 8 : 4;
 
@@ -682,9 +724,18 @@ lower_ubo_reference_visitor::emit_reads_or_writes(bool is_write,
          if (is_write) {
             base_ir->insert_after(ssbo_write(swizzle(deref, i, 1), chan_offset, 1));
          } else {
-            base_ir->insert_before(assign(deref->clone(mem_ctx, NULL),
-                                          ubo_load(deref_type, chan_offset),
-                                          (1U << i)));
+            if (this->opcode == ir_binop_ubo_load) {
+               base_ir->insert_before(assign(deref->clone(mem_ctx, NULL),
+                                             ubo_load(deref_type, chan_offset),
+                                             (1U << i)));
+            } else {
+               ir_call *load_ssbo = ssbo_load(deref_type, chan_offset);
+               base_ir->insert_before(load_ssbo);
+               ir_rvalue *value = load_ssbo->return_deref->as_rvalue()->clone(mem_ctx, NULL);
+               base_ir->insert_before(assign(deref->clone(mem_ctx, NULL),
+                                             value,
+                                             (1U << i)));
+            }
          }
       }
    }
