@@ -1316,10 +1316,194 @@ vec4_visitor::nir_emit_jump(nir_jump_instr *instr)
    }
 }
 
+enum ir_texture_opcode
+ir_texture_opcode_for_nir_texop(nir_texop texop)
+{
+   enum ir_texture_opcode op;
+
+   switch (texop) {
+   case nir_texop_lod: op = ir_lod; break;
+   case nir_texop_query_levels: op = ir_query_levels; break;
+   case nir_texop_tex: op = ir_tex; break;
+   case nir_texop_tg4: op = ir_tg4; break;
+   case nir_texop_txb: op = ir_txb; break;
+   case nir_texop_txd: op = ir_txd; break;
+   case nir_texop_txf: op = ir_txf; break;
+   case nir_texop_txf_ms: op = ir_txf_ms; break;
+   case nir_texop_txl: op = ir_txl; break;
+   case nir_texop_txs: op = ir_txs; break;
+   default:
+      unreachable("unknown texture opcode");
+   }
+
+   return op;
+}
+
 void
 vec4_visitor::nir_emit_texture(nir_tex_instr *instr)
 {
-   /* @TODO: Not yet implemented */
+   unsigned sampler = instr->sampler_index;
+   src_reg sampler_reg = src_reg(sampler);
+   src_reg coordinate;
+   const glsl_type *coord_type = NULL;
+   src_reg shadow_comparitor;
+   int shadow_compare = 0;
+   bool has_nonconstant_offset = false;
+   src_reg offset_value;
+   src_reg lod, lod2;
+   src_reg sample_index;
+   src_reg mcs;
+
+   enum glsl_base_type dest_base_type =
+      brw_glsl_base_type_for_nir_type(instr->dest_type);
+   const glsl_type *dest_type =
+      glsl_type::get_instance(dest_base_type,
+                              nir_tex_instr_dest_size(instr), 1);
+   dst_reg dest = get_nir_dest(instr->dest,
+                               brw_type_for_base_type(dest_type));
+
+   /* When tg4 is used with the degenerate ZERO/ONE swizzles, don't bother
+    * emitting anything other than setting up the constant result.
+    */
+   if (instr->op == nir_texop_tg4) {
+      int swiz = GET_SWZ(key->tex.swizzles[sampler], instr->component);
+      if (swiz == SWIZZLE_ZERO || swiz == SWIZZLE_ONE) {
+         emit(MOV(dest, src_reg(swiz == SWIZZLE_ONE ? 1.0f : 0.0f)));
+         return;
+      }
+   }
+
+   /* Load the texture operation sources */
+   for (unsigned i = 0; i < instr->num_srcs; i++) {
+      switch (instr->src[i].src_type) {
+      case nir_tex_src_comparitor:
+         shadow_comparitor = get_nir_src(instr->src[i].src,
+                                         BRW_REGISTER_TYPE_F, 4);
+         shadow_comparitor.swizzle = BRW_SWIZZLE_XXXX;
+         shadow_compare = 1;
+         break;
+
+      case nir_tex_src_coord:
+         switch (instr->op) {
+         case nir_texop_txf:
+         case nir_texop_txf_ms:
+            coordinate = get_nir_src(instr->src[i].src, BRW_REGISTER_TYPE_D, 4);
+            coord_type = glsl_type::get_instance(GLSL_TYPE_INT,
+                                                 instr->coord_components, 1);
+            break;
+
+         default:
+            coordinate = get_nir_src(instr->src[i].src, BRW_REGISTER_TYPE_F, 4);
+            coord_type = glsl_type::get_instance(GLSL_TYPE_FLOAT,
+                                                 instr->coord_components, 1);
+            break;
+         }
+         break;
+
+      case nir_tex_src_ddx:
+         lod = get_nir_src(instr->src[i].src, BRW_REGISTER_TYPE_F, 4);
+         break;
+
+      case nir_tex_src_ddy:
+         lod2 = get_nir_src(instr->src[i].src, BRW_REGISTER_TYPE_F, 4);
+         break;
+
+      case nir_tex_src_lod:
+         switch (instr->op) {
+         case nir_texop_txs:
+            lod = get_nir_src(instr->src[i].src, BRW_REGISTER_TYPE_UD, 4);
+            break;
+
+         case nir_texop_txf:
+            lod = get_nir_src(instr->src[i].src, BRW_REGISTER_TYPE_D, 4);
+            lod.swizzle = BRW_SWIZZLE_XXXX;
+            break;
+
+         default:
+            lod = get_nir_src(instr->src[i].src, BRW_REGISTER_TYPE_F, 4);
+            break;
+         }
+         break;
+
+      case nir_tex_src_ms_index: {
+         sample_index = get_nir_src(instr->src[i].src, BRW_REGISTER_TYPE_D, 4);
+
+         assert(coord_type != NULL);
+         if (devinfo->gen >= 7 &&
+             key->tex.compressed_multisample_layout_mask & (1<<sampler)) {
+            mcs = emit_mcs_fetch(coord_type, coordinate, sampler_reg);
+         } else {
+            mcs = src_reg(0u);
+         }
+         mcs = retype(mcs, BRW_REGISTER_TYPE_UD);
+         break;
+      }
+
+      case nir_tex_src_offset:
+         offset_value = get_nir_src(instr->src[i].src, BRW_REGISTER_TYPE_D, 4);
+         has_nonconstant_offset = true;
+         break;
+
+      case nir_tex_src_sampler_offset: {
+         /* The highest sampler which may be used by this operation is
+          * the last element of the array. Mark it here, because the generator
+          * doesn't have enough information to determine the bound.
+          */
+         uint32_t array_size = instr->sampler_array_size;
+         src_reg src = get_nir_src(instr->src[i].src, 4);
+         uint32_t max_used = sampler + array_size - 1;
+         if (instr->op == nir_texop_tg4) {
+            max_used += prog_data->base.binding_table.gather_texture_start;
+         } else {
+            max_used += prog_data->base.binding_table.texture_start;
+         }
+
+         brw_mark_surface_used(&prog_data->base, max_used);
+
+         /* Emit code to evaluate the actual indexing expression */
+         dst_reg temp(this, glsl_type::uint_type);
+         emit(ADD(temp, src, src_reg(sampler)));
+         emit_uniformize(temp, src_reg(temp));
+
+         sampler_reg = src_reg(temp);
+         break;
+      }
+
+      case nir_tex_src_projector:
+         unreachable("Should be lowered by do_lower_texture_projection");
+
+      case nir_tex_src_bias:
+         unreachable("LOD bias is not valid for vertex shaders.\n");
+
+      default:
+         unreachable("unknown texture source");
+      }
+   }
+
+   uint32_t constant_offset = 0;
+   for (unsigned i = 0; i < 3; i++) {
+      if (instr->const_offset[i] != 0) {
+         constant_offset = brw_texture_offset(instr->const_offset, 3);
+         break;
+      }
+   }
+
+   /* Stuff the channel select bits in the top of the texture offset */
+   if (instr->op == nir_texop_tg4)
+      constant_offset |= gather_channel(instr->component, sampler) << 16;
+
+   ir_texture_opcode op = ir_texture_opcode_for_nir_texop(instr->op);
+
+   bool is_cube_array =
+      instr->op == nir_texop_txs &&
+      instr->sampler_dim == GLSL_SAMPLER_DIM_CUBE &&
+      instr->is_array;
+
+   emit_texture(op, dest, dest_type, coordinate, instr->coord_components,
+                shadow_compare, shadow_comparitor,
+                lod, lod2, sample_index,
+                has_nonconstant_offset, constant_offset, offset_value,
+                mcs, is_cube_array, sampler, sampler_reg);
 }
 
 }
