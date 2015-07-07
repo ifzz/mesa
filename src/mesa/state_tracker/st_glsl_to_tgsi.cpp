@@ -399,7 +399,6 @@ public:
    virtual void visit(ir_emit_vertex *);
    virtual void visit(ir_end_primitive *);
    virtual void visit(ir_barrier *);
-   virtual void visit(ir_ssbo_store *);
    /*@}*/
 
    st_src_reg result;
@@ -3437,12 +3436,6 @@ void
 glsl_to_tgsi_visitor::visit(ir_barrier *ir)
 {
    unreachable("Not implemented!");
-}
-
-void
-glsl_to_tgsi_visitor::visit(ir_ssbo_store *ir)
-{
-   assert(!"Not implemented yet");
 }
 
 glsl_to_tgsi_visitor::glsl_to_tgsi_visitor()
