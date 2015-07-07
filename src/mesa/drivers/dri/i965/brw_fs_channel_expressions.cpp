@@ -378,7 +378,6 @@ ir_channel_expressions_visitor::visit_leave(ir_assignment *ir)
    }
 
    case ir_binop_ubo_load:
-   case ir_binop_ssbo_load:
    case ir_triop_ssbo_unsized_array_length:
       unreachable("not yet supported");
 
