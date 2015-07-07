@@ -162,7 +162,8 @@ public:
    ir_call *ssbo_write(ir_rvalue *deref, ir_rvalue *offset,
                        unsigned write_mask);
 
-   void emit_reads_or_writes(bool is_write, ir_dereference *deref,
+   void emit_reads_or_writes(bool is_shader_storage, bool is_write,
+                             ir_dereference *deref,
                              ir_variable *base_offset, unsigned int deref_offset,
                              bool row_major, int matrix_columns,
                              bool is_std430, unsigned write_mask);
@@ -463,9 +464,7 @@ lower_ubo_reference_visitor::handle_rvalue(ir_rvalue **rvalue)
                            &is_shader_storage);
    assert(offset);
 
-   if (is_shader_storage)
-      this->opcode = ir_binop_ssbo_load;
-   else
+   if (!is_shader_storage)
       this->opcode = ir_binop_ubo_load;
 
    /* Now that we've calculated the offset to the start of the
@@ -484,7 +483,7 @@ lower_ubo_reference_visitor::handle_rvalue(ir_rvalue **rvalue)
    base_ir->insert_before(assign(load_offset, offset));
 
    deref = new(mem_ctx) ir_dereference_variable(load_var);
-   emit_reads_or_writes(false, deref, load_offset, const_offset,
+   emit_reads_or_writes(is_shader_storage, false, deref, load_offset, const_offset,
                         row_major, matrix_columns, false, 0);
    *rvalue = deref;
 
@@ -588,7 +587,8 @@ writemask_for_size(unsigned n)
  * point that the reads or writes generated are contiguous scalars or vectors.
  */
 void
-lower_ubo_reference_visitor::emit_reads_or_writes(bool is_write,
+lower_ubo_reference_visitor::emit_reads_or_writes(bool is_shader_storage,
+                                                  bool is_write,
                                                   ir_dereference *deref,
                                                   ir_variable *base_offset,
                                                   unsigned int deref_offset,
@@ -611,7 +611,7 @@ lower_ubo_reference_visitor::emit_reads_or_writes(bool is_write,
             glsl_align(field_offset,
                        field->type->std140_base_alignment(row_major));
 
-         emit_reads_or_writes(is_write, field_deref, base_offset,
+         emit_reads_or_writes(is_shader_storage, is_write, field_deref, base_offset,
                               deref_offset + field_offset,
                               row_major, 1, is_std430,
                               writemask_for_size(field_deref->type->vector_elements));
@@ -632,7 +632,7 @@ lower_ubo_reference_visitor::emit_reads_or_writes(bool is_write,
             new(mem_ctx) ir_dereference_array(deref->clone(mem_ctx, NULL),
                                               element);
 
-         emit_reads_or_writes(is_write, element_deref, base_offset,
+         emit_reads_or_writes(is_shader_storage, is_write, element_deref, base_offset,
                               deref_offset + i * array_stride,
                               row_major, 1, is_std430,
                               writemask_for_size(element_deref->type->vector_elements));
@@ -651,7 +651,7 @@ lower_ubo_reference_visitor::emit_reads_or_writes(bool is_write,
              * element.
              */
             int size_mul = deref->type->is_double() ? 8 : 4;
-            emit_reads_or_writes(is_write, col_deref, base_offset,
+            emit_reads_or_writes(is_shader_storage, is_write, col_deref, base_offset,
                                  deref_offset + i * size_mul,
                                  row_major, deref->type->matrix_columns,
                                  is_std430,
@@ -669,7 +669,7 @@ lower_ubo_reference_visitor::emit_reads_or_writes(bool is_write,
                            8 * deref->type->vector_elements :
                            4 * deref->type->vector_elements;
             }
-            emit_reads_or_writes(is_write, col_deref, base_offset,
+            emit_reads_or_writes(is_shader_storage, is_write, col_deref, base_offset,
                                  deref_offset + i * size_mul,
                                  row_major, deref->type->matrix_columns,
                                  is_std430,
@@ -687,7 +687,7 @@ lower_ubo_reference_visitor::emit_reads_or_writes(bool is_write,
       if (is_write)
          base_ir->insert_after(ssbo_write(deref, offset, write_mask));
       else {
-         if (this->opcode == ir_binop_ubo_load) {
+         if (!is_shader_storage) {
              base_ir->insert_before(assign(deref->clone(mem_ctx, NULL),
                                            ubo_load(deref->type, offset)));
          } else {
@@ -724,7 +724,7 @@ lower_ubo_reference_visitor::emit_reads_or_writes(bool is_write,
          if (is_write) {
             base_ir->insert_after(ssbo_write(swizzle(deref, i, 1), chan_offset, 1));
          } else {
-            if (this->opcode == ir_binop_ubo_load) {
+            if (!is_shader_storage) {
                base_ir->insert_before(assign(deref->clone(mem_ctx, NULL),
                                              ubo_load(deref_type, chan_offset),
                                              (1U << i)));
@@ -774,7 +774,7 @@ lower_ubo_reference_visitor::write_to_memory(ir_dereference *deref,
    base_ir->insert_before(assign(write_offset, offset));
 
    deref = new(mem_ctx) ir_dereference_variable(write_var);
-   emit_reads_or_writes(true, deref, write_offset, const_offset,
+   emit_reads_or_writes(true, true, deref, write_offset, const_offset,
                         row_major, matrix_columns, is_std430, write_mask);
 }
 
