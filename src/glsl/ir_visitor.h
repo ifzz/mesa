@@ -66,7 +66,6 @@ public:
    virtual void visit(class ir_emit_vertex *) = 0;
    virtual void visit(class ir_end_primitive *) = 0;
    virtual void visit(class ir_barrier *) = 0;
-   virtual void visit(class ir_ssbo_store *) {};
    /*@}*/
 };
 
@@ -88,7 +87,6 @@ public:
    virtual void visit(class ir_emit_vertex *) {}
    virtual void visit(class ir_end_primitive *) {}
    virtual void visit(class ir_barrier *) {}
-   virtual void visit(class ir_ssbo_store *) {}
 };
 #endif /* __cplusplus */
 
