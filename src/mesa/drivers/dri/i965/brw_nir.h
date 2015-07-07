@@ -26,6 +26,7 @@
 #include "brw_context.h"
 #include "brw_reg.h"
 #include "glsl/nir/nir.h"
+#include "glsl/ir.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -83,6 +84,8 @@ nir_shader *brw_create_nir(struct brw_context *brw,
 enum brw_reg_type brw_type_for_nir_type(nir_alu_type type);
 
 enum glsl_base_type brw_glsl_base_type_for_nir_type(nir_alu_type type);
+
+enum ir_texture_opcode ir_texture_opcode_for_nir_texop(nir_texop texop);
 
 #ifdef __cplusplus
 }

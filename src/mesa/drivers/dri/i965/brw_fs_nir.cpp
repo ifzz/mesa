@@ -1716,21 +1716,7 @@ fs_visitor::nir_emit_texture(const fs_builder &bld, nir_tex_instr *instr)
       glsl_type::get_instance(dest_base_type, nir_tex_instr_dest_size(instr),
                               1);
 
-   ir_texture_opcode op;
-   switch (instr->op) {
-   case nir_texop_lod: op = ir_lod; break;
-   case nir_texop_query_levels: op = ir_query_levels; break;
-   case nir_texop_tex: op = ir_tex; break;
-   case nir_texop_tg4: op = ir_tg4; break;
-   case nir_texop_txb: op = ir_txb; break;
-   case nir_texop_txd: op = ir_txd; break;
-   case nir_texop_txf: op = ir_txf; break;
-   case nir_texop_txf_ms: op = ir_txf_ms; break;
-   case nir_texop_txl: op = ir_txl; break;
-   case nir_texop_txs: op = ir_txs; break;
-   default:
-      unreachable("unknown texture opcode");
-   }
+   ir_texture_opcode op = ir_texture_opcode_for_nir_texop(instr->op);
 
    emit_texture(op, dest_type, coordinate, instr->coord_components,
                 shadow_comparitor, lod, lod2, lod_components, sample_index,
