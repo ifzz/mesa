@@ -2503,14 +2503,21 @@ vec4_visitor::visit_atomic_intrinsic(ir_call *ir)
 {
    /* The first argument to an atomic operation can only be a buffer variable
     * which at this point must have been lowered by lower_ubo_reference to
-    * a ir_binop_ssbo_load expression. The ir_binop_ssbo_load expression
+    * a __intrinsic_load_ssbo. The __intrinsic_load_ssbo ir_call
     * contains the surface index and offset data we need.
     */
    ir_instruction *inst = (ir_instruction *) ir->actual_parameters.get_head();
-   ir_expression *ssbo_expr = inst->as_expression();
-   assert(ssbo_expr);
+   ir_call *ssbo_load = (ir_call *) inst;
 
-   ir_constant *const_uniform_block = ssbo_expr->operands[0]->as_constant();
+   assert(ssbo_load);
+
+   exec_node *param_ssbo_load = ssbo_load->actual_parameters.get_head();
+   /* surface, offset */
+   ir_dereference *block_ssbo_load = (ir_dereference *)param_ssbo_load;
+   param_ssbo_load = param_ssbo_load->get_next();
+   ir_dereference *offset_ssbo_load = (ir_dereference *)param_ssbo_load;
+
+   ir_constant *const_uniform_block = block_ssbo_load->as_constant();
    src_reg surface;
    if (const_uniform_block) {
       unsigned surf_index = prog_data->base.binding_table.ubo_start +
@@ -2518,7 +2525,7 @@ vec4_visitor::visit_atomic_intrinsic(ir_call *ir)
       surface = src_reg(surf_index);
       brw_mark_surface_used(&prog_data->base, surf_index);
    } else {
-      ssbo_expr->operands[0]->accept(this);
+      block_ssbo_load->accept(this);
       surface = this->result;
       emit(ADD(dst_reg(surface), surface,
                src_reg(prog_data->base.binding_table.ubo_start)));
@@ -2531,7 +2538,7 @@ vec4_visitor::visit_atomic_intrinsic(ir_call *ir)
                             shader_prog->NumUniformBlocks - 1);
    }
 
-   ssbo_expr->operands[1]->accept(this);
+   offset_ssbo_load->accept(this);
    src_reg offset = this->result;
 
    int param_count = ir->actual_parameters.length();
