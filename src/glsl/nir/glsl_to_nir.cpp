@@ -760,18 +760,21 @@ nir_visitor::visit(ir_call *ir)
       case nir_intrinsic_ssbo_atomic_comp_swap: {
          /* The first argument to an atomic operation can only be a buffer
           * variable which at this point must have been lowered by
-          * lower_ubo_reference to a ir_binop_ssbo_load expression. The
-          * ir_binop_ssbo_load expression contains the surface index and offset
-          * data we need.
+          * lower_ubo_reference to a __intrinsic_load_ssbo ir_call. The
+          * __intrinsic_load_ssbo ir_call contains the surface index and
+          * offset data we need.
           */
          exec_node *param = ir->actual_parameters.get_head();
-         ir_instruction *ssbo_load = (ir_instruction *) param;
-         ir_expression *ssbo_expr = ssbo_load->as_expression();
-         assert(ssbo_expr);
+         ir_call *ssbo_load = (ir_call *) param;
+         assert(ssbo_load);
 
+         exec_node *param_ssbo_load = ssbo_load->actual_parameters.get_head();
          /* surface, offset */
-         instr->src[0] = evaluate_rvalue(ssbo_expr->operands[0]);
-         instr->src[1] = evaluate_rvalue(ssbo_expr->operands[1]);
+         ir_dereference *block = (ir_dereference *)param_ssbo_load;
+         param_ssbo_load = param_ssbo_load->get_next();
+         ir_dereference *offset = (ir_dereference *)param_ssbo_load;
+         instr->src[0] = evaluate_rvalue(block);
+         instr->src[1] = evaluate_rvalue(offset);
 
          int param_count = ir->actual_parameters.length();
          assert(param_count == 2 || param_count == 3);
