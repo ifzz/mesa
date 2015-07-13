@@ -476,6 +476,7 @@ void
 vec4_visitor::nir_emit_load_const(nir_load_const_instr *instr)
 {
    dst_reg reg = dst_reg(GRF, alloc.allocate(1));
+   reg.type =  BRW_REGISTER_TYPE_F;
 
    /* @FIXME: consider emitting vector operations to save some MOVs in
     * cases where the components are representable in 8 bits.
@@ -483,20 +484,7 @@ vec4_visitor::nir_emit_load_const(nir_load_const_instr *instr)
     */
    for (unsigned i = 0; i < instr->def.num_components; ++i) {
       reg.writemask = 1 << i;
-
-      switch (reg.type) {
-      case BRW_REGISTER_TYPE_F:
-         emit(MOV(reg, src_reg(instr->value.f[i])));
-         break;
-      case BRW_REGISTER_TYPE_D:
-         emit(MOV(reg, src_reg(instr->value.i[i])));
-         break;
-      case BRW_REGISTER_TYPE_UD:
-         emit(MOV(reg, src_reg(instr->value.u[i])));
-         break;
-      default:
-         unreachable("invalid register type");
-      }
+      emit(MOV(reg, src_reg(instr->value.f[i])));
    }
 
    /* Set final writemask */
