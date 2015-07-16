@@ -529,11 +529,13 @@ vec4_visitor::nir_emit_intrinsic(nir_intrinsic_instr *instr)
       int offset = instr->const_index[0];
       int output = instr->const_index[1];
 
-      src = get_nir_src(instr->src[0], nir_output_types[offset],
-                        instr->num_components);
+      if (output == VARYING_SLOT_PSIZ) {
+         src = get_nir_src(instr->src[0], BRW_REGISTER_TYPE_F, 1);
+      } else {
+         src = get_nir_src(instr->src[0], nir_output_types[offset],
+                           instr->num_components);
+      }
       dest = dst_reg(src);
-
-      dest.writemask = brw_writemask_for_size(instr->num_components);
 
       if (has_indirect) {
          dest.reladdr = new(mem_ctx) src_reg(get_nir_src(instr->src[1],
