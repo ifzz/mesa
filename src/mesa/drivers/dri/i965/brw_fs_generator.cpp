@@ -95,6 +95,9 @@ brw_reg_from_fs_reg(fs_inst *inst, fs_reg *reg, unsigned gen)
                               reg->type == BRW_REGISTER_TYPE_VF) ? 1 : 0));
 
       switch (reg->type) {
+      case BRW_REGISTER_TYPE_DF:
+         brw_reg = brw_imm_df(reg->df);
+         break;
       case BRW_REGISTER_TYPE_F:
 	 brw_reg = brw_imm_f(reg->f);
 	 break;
