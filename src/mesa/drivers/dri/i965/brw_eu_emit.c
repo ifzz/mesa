@@ -927,6 +927,10 @@ brw_alu3(struct brw_codegen *p, unsigned opcode, struct brw_reg dest,
          brw_inst_set_3src_src_type(devinfo, inst, BRW_3SRC_TYPE_F);
          brw_inst_set_3src_dst_type(devinfo, inst, BRW_3SRC_TYPE_F);
          break;
+      case BRW_REGISTER_TYPE_DF:
+         brw_inst_set_3src_src_type(devinfo, inst, BRW_3SRC_TYPE_DF);
+         brw_inst_set_3src_dst_type(devinfo, inst, BRW_3SRC_TYPE_DF);
+         break;
       case BRW_REGISTER_TYPE_D:
          brw_inst_set_3src_src_type(devinfo, inst, BRW_3SRC_TYPE_D);
          brw_inst_set_3src_dst_type(devinfo, inst, BRW_3SRC_TYPE_D);
