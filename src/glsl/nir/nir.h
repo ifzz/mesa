@@ -2043,9 +2043,16 @@ void nir_lower_to_source_mods(nir_shader *shader);
 
 bool nir_lower_gs_intrinsics(nir_shader *shader);
 
+typedef enum {
+   nir_lower_drcp = (1 << 0),
+   nir_lower_dsqrt = (1 << 1),
+   nir_lower_drsq = (1 << 2),
+} nir_lower_doubles_options;
+
+void nir_lower_doubles(nir_shader *shader, nir_lower_doubles_options options);
 void nir_lower_double_pack(nir_shader *shader);
 
-void nir_normalize_cubemap_coords(nir_shader *shader);
+bool nir_normalize_cubemap_coords(nir_shader *shader);
 
 void nir_live_ssa_defs_impl(nir_function_impl *impl);
 bool nir_ssa_defs_interfere(nir_ssa_def *a, nir_ssa_def *b);
