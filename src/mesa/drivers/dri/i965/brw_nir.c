@@ -192,6 +192,10 @@ nir_optimize(nir_shader *nir, bool is_scalar)
          nir_validate_shader(nir);
       }
 
+      nir_lower_doubles(nir, nir_lower_drcp |
+                             nir_lower_dsqrt |
+                             nir_lower_drsq);
+      nir_validate_shader(nir);
       progress |= nir_copy_prop(nir);
       nir_validate_shader(nir);
       progress |= nir_opt_dce(nir);
