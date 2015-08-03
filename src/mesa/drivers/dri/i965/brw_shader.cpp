@@ -620,6 +620,9 @@ brw_negate_immediate(enum brw_reg_type type, struct brw_reg *reg)
    case BRW_REGISTER_TYPE_VF:
       reg->dw1.ud ^= 0x80808080;
       return true;
+   case BRW_REGISTER_TYPE_DF:
+      reg->dw1.df = -reg->dw1.df;
+      return true;
    case BRW_REGISTER_TYPE_UB:
    case BRW_REGISTER_TYPE_B:
       unreachable("no UB/B immediates");
@@ -629,9 +632,8 @@ brw_negate_immediate(enum brw_reg_type type, struct brw_reg *reg)
    case BRW_REGISTER_TYPE_UQ:
    case BRW_REGISTER_TYPE_Q:
       assert(!"unimplemented: negate UQ/Q immediate");
-   case BRW_REGISTER_TYPE_DF:
    case BRW_REGISTER_TYPE_HF:
-      assert(!"unimplemented: negate DF/HF immediate");
+      assert(!"unimplemented: negate HF immediate");
    }
 
    return false;
@@ -701,7 +703,17 @@ backend_reg::is_zero() const
    if (file != IMM)
       return false;
 
-   return fixed_hw_reg.dw1.d == 0;
+   switch (type) {
+   case BRW_REGISTER_TYPE_F:
+      return fixed_hw_reg.dw1.f == 0;
+   case BRW_REGISTER_TYPE_DF:
+      return fixed_hw_reg.dw1.df == 0;
+   case BRW_REGISTER_TYPE_D:
+   case BRW_REGISTER_TYPE_UD:
+      return fixed_hw_reg.dw1.d == 0;
+   default:
+      return false;
+   }
 }
 
 bool
@@ -710,9 +722,17 @@ backend_reg::is_one() const
    if (file != IMM)
       return false;
 
-   return type == BRW_REGISTER_TYPE_F
-          ? fixed_hw_reg.dw1.f == 1.0
-          : fixed_hw_reg.dw1.d == 1;
+   switch (type) {
+   case BRW_REGISTER_TYPE_F:
+      return fixed_hw_reg.dw1.f == 1.0f;
+   case BRW_REGISTER_TYPE_DF:
+      return fixed_hw_reg.dw1.df == 1.0;
+   case BRW_REGISTER_TYPE_D:
+   case BRW_REGISTER_TYPE_UD:
+      return fixed_hw_reg.dw1.d == 1;
+   default:
+      return false;
+   }
 }
 
 bool
@@ -724,6 +744,8 @@ backend_reg::is_negative_one() const
    switch (type) {
    case BRW_REGISTER_TYPE_F:
       return fixed_hw_reg.dw1.f == -1.0;
+   case BRW_REGISTER_TYPE_DF:
+      return fixed_hw_reg.dw1.df == -1.0;
    case BRW_REGISTER_TYPE_D:
       return fixed_hw_reg.dw1.d == -1;
    default:
