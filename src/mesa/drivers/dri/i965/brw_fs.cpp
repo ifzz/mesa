@@ -4598,6 +4598,8 @@ fs_visitor::dump_instruction(backend_instruction *be_inst, FILE *file)
    case IMM:
       unreachable("not reached");
    }
+   if (inst->dst.stride != 1)
+      fprintf(file, "<%u>", inst->dst.stride);
    fprintf(file, ":%s, ", brw_reg_type_letters(inst->dst.type));
 
    for (int i = 0; i < inst->sources; i++) {
@@ -4692,6 +4694,18 @@ fs_visitor::dump_instruction(backend_instruction *be_inst, FILE *file)
       }
       if (inst->src[i].abs)
          fprintf(file, "|");
+
+      if (inst->src[i].file != IMM) {
+         unsigned stride;
+         if (inst->src[i].file == HW_REG) {
+            unsigned hstride = inst->src[i].fixed_hw_reg.hstride;
+            stride = (hstride == 0 ? 0 : (1 << (hstride - 1)));
+         } else {
+            stride = inst->src[i].stride;
+         }
+         if (stride != 1)
+            fprintf(file, "<%u>", stride);
+      }
 
       if (inst->src[i].file != IMM) {
          fprintf(file, ":%s", brw_reg_type_letters(inst->src[i].type));
