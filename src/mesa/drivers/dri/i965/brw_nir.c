@@ -181,6 +181,9 @@ nir_optimize(nir_shader *nir, bool is_scalar)
       if (is_scalar) {
          nir_lower_alu_to_scalar(nir);
          nir_validate_shader(nir);
+      } else {
+         brw_nir_split_doubles(nir);
+         nir_validate_shader(nir);
       }
 
       progress |= nir_copy_prop(nir);
