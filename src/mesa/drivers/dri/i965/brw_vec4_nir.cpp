@@ -153,6 +153,9 @@ vec4_visitor::nir_emit_impl(nir_function_impl *impl)
       unsigned array_elems =
          reg->num_array_elems == 0 ? 1 : reg->num_array_elems;
 
+      if (reg->bit_size == 64)
+         array_elems *= 2;
+
       nir_locals[reg->index] = dst_reg(GRF, alloc.allocate(array_elems));
    }
 
@@ -319,6 +322,9 @@ vec4_visitor::get_nir_src(nir_src src, enum brw_reg_type type,
    }
 
    reg = retype(reg, type);
+
+   if (type_sz(type) == 8)
+      num_components *= 2;
 
    src_reg reg_as_src = src_reg(reg);
    reg_as_src.swizzle = brw_swizzle_for_size(num_components);
@@ -703,7 +709,12 @@ vec4_visitor::nir_emit_intrinsic(nir_intrinsic_instr *instr)
          src.reladdr = new(mem_ctx) src_reg(tmp);
       }
 
+      src.type = dest.type;
+
       emit(MOV(dest, src));
+      if (instr->num_components > 2 && nir_dest_bit_size(instr->dest) == 64)
+         emit(MOV(offset(dest, 1), offset(src, 1)));
+
       break;
    }
 
