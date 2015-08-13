@@ -80,6 +80,15 @@ src_reg::src_reg(float f)
    this->fixed_hw_reg.dw1.f = f;
 }
 
+src_reg::src_reg(double d)
+{
+   init();
+
+   this->file = IMM;
+   this->type = BRW_REGISTER_TYPE_DF;
+   this->fixed_hw_reg.dw1.df = d;
+}
+
 src_reg::src_reg(uint32_t u)
 {
    init();
