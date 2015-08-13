@@ -1359,10 +1359,30 @@ vec4_visitor::nir_emit_alu(nir_alu_instr *instr)
    case nir_op_flt:
    case nir_op_fge:
    case nir_op_feq:
-   case nir_op_fne:
-      emit(CMP(dst, op[0], op[1],
+   case nir_op_fne: {
+      dst_reg temp = dst;
+
+      if (nir_src_bit_size(instr->src[0].src) == 64) {
+         temp = dst_reg(VGRF, alloc.allocate(2));
+         temp.type = BRW_REGISTER_TYPE_DF;
+      }
+
+      emit(CMP(temp, op[0], op[1],
                brw_conditional_for_nir_comparison(instr->op)));
+
+      if (nir_src_bit_size(instr->src[0].src) == 64) {
+         /* Produce a 32-bit boolean result from the DF comparison by selecting
+          * only the low 32-bit in each DF produced. Do this in a temporary
+          * so we can then move from there to the result using align16 again
+          * to honor the original writemask.
+          */
+         dst_reg result = dst_reg(VGRF, alloc.allocate(1));
+         result.type = dst.type;
+         emit(VEC4_OPCODE_PICK_LOW_32BIT, result, src_reg(temp));
+         emit(MOV(dst, src_reg(result)));
+      }
       break;
+   }
 
    case nir_op_ball_iequal2:
    case nir_op_ball_iequal3:
