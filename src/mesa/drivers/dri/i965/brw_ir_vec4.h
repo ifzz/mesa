@@ -42,6 +42,7 @@ public:
    src_reg(enum brw_reg_file file, int nr, const glsl_type *type);
    src_reg();
    src_reg(float f);
+   src_reg(double d);
    src_reg(uint32_t u);
    src_reg(int32_t i);
    src_reg(uint8_t vf[4]);
