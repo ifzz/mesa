@@ -68,7 +68,7 @@ static void
 print_register_decl(nir_register *reg, print_state *state)
 {
    FILE *fp = state->fp;
-   fprintf(fp, "decl_reg %s ", sizes[reg->num_components]);
+   fprintf(fp, "decl_reg %s %u ", sizes[reg->num_components], reg->bit_size);
    if (reg->is_packed)
       fprintf(fp, "(packed) ");
    print_register(reg, state);
@@ -83,7 +83,8 @@ print_ssa_def(nir_ssa_def *def, print_state *state)
    FILE *fp = state->fp;
    if (def->name != NULL)
       fprintf(fp, "/* %s */ ", def->name);
-   fprintf(fp, "%s ssa_%u", sizes[def->num_components], def->index);
+   fprintf(fp, "%s %u ssa_%u", sizes[def->num_components], def->bit_size,
+           def->index);
 }
 
 static void
@@ -276,6 +277,13 @@ print_constant(nir_constant *c, const struct glsl_type *type, print_state *state
       for (i = 0; i < total_elems; i++) {
          if (i > 0) fprintf(fp, ", ");
          fprintf(fp, "%f", c->value.f[i]);
+      }
+      break;
+
+   case GLSL_TYPE_DOUBLE:
+      for (i = 0; i < total_elems; i++) {
+         if (i > 0) fprintf(fp, ", ");
+         fprintf(fp, "%f", c->value.d[i]);
       }
       break;
 
@@ -713,7 +721,10 @@ print_load_const_instr(nir_load_const_instr *instr, print_state *state)
        * and then print the float in a comment for readability.
        */
 
-      fprintf(fp, "0x%08x /* %f */", instr->value.u32[i], instr->value.f32[i]);
+      if (instr->def.bit_size == 64)
+         fprintf(fp, "0x%16lx /* %f */", instr->value.u64[i], instr->value.f64[i]);
+      else
+         fprintf(fp, "0x%08x /* %f */", instr->value.u32[i], instr->value.f32[i]);
    }
 
    fprintf(fp, ")");
