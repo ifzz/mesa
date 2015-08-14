@@ -533,6 +533,7 @@ fs_visitor::nir_emit_alu(const fs_builder &bld, nir_alu_instr *instr)
       }
       return;
    }
+
    default:
       break;
    }
@@ -889,6 +890,19 @@ fs_visitor::nir_emit_alu(const fs_builder &bld, nir_alu_instr *instr)
    case nir_op_unpack_half_2x16_split_y:
       inst = bld.emit(FS_OPCODE_UNPACK_HALF_2x16_SPLIT_Y, result, op[0]);
       inst->saturate = instr->dest.saturate;
+      break;
+
+   case nir_op_pack_double_2x32_split:
+      bld.MOV(stride(retype(result, BRW_REGISTER_TYPE_UD), 2), op[0]);
+      bld.MOV(stride(horiz_offset(retype(result, BRW_REGISTER_TYPE_UD), 1), 2), op[1]);
+      break;
+
+   case nir_op_unpack_double_2x32_split_x:
+      bld.MOV(result, stride(retype(op[0], BRW_REGISTER_TYPE_UD), 2));
+      break;
+
+   case nir_op_unpack_double_2x32_split_y:
+      bld.MOV(result, stride(horiz_offset(retype(op[0], BRW_REGISTER_TYPE_UD), 1), 2));
       break;
 
    case nir_op_fpow:
