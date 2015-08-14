@@ -207,13 +207,12 @@ validate_alu_src(nir_alu_instr *instr, unsigned index, validate_state *state)
       /* This source has an explicit bit size */
       assert((src_type & NIR_ALU_TYPE_SIZE_MASK) == src_bit_size);
    } else {
-      /* The output being explicitly sized would be silly */
-      assert(!(nir_op_infos[instr->op].output_type & NIR_ALU_TYPE_SIZE_MASK));
-
-      unsigned dest_bit_size =
-         instr->dest.dest.is_ssa ? instr->dest.dest.ssa.bit_size
-                                 : instr->dest.dest.reg.reg->bit_size;
-      assert(dest_bit_size == src_bit_size);
+      if (!(nir_op_infos[instr->op].output_type & NIR_ALU_TYPE_SIZE_MASK)) {
+         unsigned dest_bit_size =
+            instr->dest.dest.is_ssa ? instr->dest.dest.ssa.bit_size
+                                    : instr->dest.dest.reg.reg->bit_size;
+         assert(dest_bit_size == src_bit_size);
+      }
    }
 
    validate_src(&src->src, state);
