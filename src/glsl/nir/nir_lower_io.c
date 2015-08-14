@@ -41,6 +41,117 @@ struct lower_io_state {
    nir_variable_mode mode;
 };
 
+static int
+type_size_vec4(const struct glsl_type *type)
+{
+   unsigned int i;
+   int size;
+   unsigned multiplier = 1;
+
+   switch (glsl_get_base_type(type)) {
+   case GLSL_TYPE_DOUBLE:
+      multiplier = 2;
+      /* fallthrough */
+   case GLSL_TYPE_UINT:
+   case GLSL_TYPE_INT:
+   case GLSL_TYPE_FLOAT:
+   case GLSL_TYPE_BOOL:
+      if (glsl_type_is_matrix(type)) {
+         return glsl_get_matrix_columns(type) * multiplier;
+      } else {
+         return 2;
+      }
+   case GLSL_TYPE_ARRAY:
+      return type_size_vec4(glsl_get_array_element(type)) * glsl_get_length(type);
+   case GLSL_TYPE_STRUCT:
+      size = 0;
+      for (i = 0; i <  glsl_get_length(type); i++) {
+         size += type_size_vec4(glsl_get_struct_field(type, i));
+      }
+      return size;
+   case GLSL_TYPE_SUBROUTINE:
+      return 1;
+   case GLSL_TYPE_SAMPLER:
+      return 0;
+   case GLSL_TYPE_ATOMIC_UINT:
+      return 0;
+   case GLSL_TYPE_IMAGE:
+   case GLSL_TYPE_VOID:
+   case GLSL_TYPE_ERROR:
+   case GLSL_TYPE_INTERFACE:
+      unreachable("not reached");
+   }
+
+   return 0;
+}
+
+static unsigned
+num_locations(enum glsl_base_type type)
+{
+   switch (type) {
+   case GLSL_TYPE_INT:
+   case GLSL_TYPE_UINT:
+   case GLSL_TYPE_BOOL:
+   case GLSL_TYPE_FLOAT:
+      return 1;
+
+   case GLSL_TYPE_DOUBLE:
+      return 2;
+
+   default:
+      unreachable("unknown base type");
+   }
+
+   return 0;
+}
+
+static unsigned
+type_size_scalar(const struct glsl_type *type)
+{
+   unsigned int size, i;
+
+   switch (glsl_get_base_type(type)) {
+   case GLSL_TYPE_UINT:
+   case GLSL_TYPE_INT:
+   case GLSL_TYPE_FLOAT:
+   case GLSL_TYPE_BOOL:
+   case GLSL_TYPE_DOUBLE:
+      return num_locations(glsl_get_base_type(type)) * glsl_get_components(type);
+   case GLSL_TYPE_ARRAY:
+      return type_size_scalar(glsl_get_array_element(type)) * glsl_get_length(type);
+   case GLSL_TYPE_STRUCT:
+      size = 0;
+      for (i = 0; i < glsl_get_length(type); i++) {
+         size += type_size_scalar(glsl_get_struct_field(type, i));
+      }
+      return size;
+   case GLSL_TYPE_SUBROUTINE:
+      return 1;
+   case GLSL_TYPE_SAMPLER:
+      return 0;
+   case GLSL_TYPE_ATOMIC_UINT:
+      return 0;
+   case GLSL_TYPE_INTERFACE:
+      return 0;
+   case GLSL_TYPE_IMAGE:
+      return 0;
+   case GLSL_TYPE_VOID:
+   case GLSL_TYPE_ERROR:
+      unreachable("not reached");
+   }
+
+   return 0;
+}
+
+static unsigned
+type_size(const struct glsl_type *type, bool is_scalar)
+{
+   if (is_scalar)
+      return type_size_scalar(type);
+   else
+      return type_size_vec4(type);
+}
+
 void
 nir_assign_var_locations(struct exec_list *var_list, unsigned *size,
                          int (*type_size)(const struct glsl_type *))
@@ -216,7 +327,8 @@ nir_lower_io_block(nir_block *block, void *void_state)
 
          if (intrin->dest.is_ssa) {
             nir_ssa_dest_init(&load->instr, &load->dest,
-                              intrin->num_components, NULL);
+                              intrin->num_components,
+                              intrin->dest.ssa.bit_size, NULL);
             nir_ssa_def_rewrite_uses(&intrin->dest.ssa,
                                      nir_src_for_ssa(&load->dest.ssa));
          } else {
