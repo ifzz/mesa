@@ -173,9 +173,8 @@ public:
    ir_expression *process_ssbo_unsized_array_length(ir_rvalue **,
                                                     ir_dereference *,
                                                     ir_variable *);
-   ir_expression *emit_ssbo_unsized_array_length(ir_variable *base_offset,
-                                                 unsigned int deref_offset,
-                                                 unsigned int unsized_array_stride);
+   ir_expression *emit_ssbo_get_buffer_size();
+
    unsigned calculate_unsized_array_stride(ir_dereference *deref);
 
    ir_call *lower_ssbo_atomic_intrinsic(ir_call *ir);
@@ -856,17 +855,12 @@ lower_ubo_reference_visitor::check_ssbo_unsized_array_length_assignment(ir_assig
 }
 
 ir_expression *
-lower_ubo_reference_visitor::emit_ssbo_unsized_array_length(ir_variable *base_offset,
-                                                            unsigned int deref_offset,
-                                                            unsigned int unsized_array_stride)
+lower_ubo_reference_visitor::emit_ssbo_get_buffer_size()
 {
-   ir_rvalue *offset =
-      add(base_offset, new(mem_ctx) ir_constant(deref_offset));
-   ir_rvalue *stride = new(mem_ctx) ir_constant(unsized_array_stride);
    ir_rvalue *block_ref = this->uniform_block->clone(mem_ctx, NULL);
-   return new(mem_ctx) ir_expression(ir_triop_ssbo_unsized_array_length,
+   return new(mem_ctx) ir_expression(ir_unop_ssbo_get_buffer_size,
                                      glsl_type::int_type,
-                                     block_ref, offset, stride);
+                                     block_ref);
 }
 
 unsigned
@@ -934,34 +928,37 @@ lower_ubo_reference_visitor::process_ssbo_unsized_array_length(ir_rvalue **rvalu
 {
    mem_ctx = ralloc_parent(*rvalue);
 
-   ir_rvalue *offset = NULL;
+   ir_rvalue *base_offset = NULL;
    unsigned const_offset;
    bool row_major;
    int matrix_columns;
-   unsigned unsized_array_stride = calculate_unsized_array_stride(deref);
+   int unsized_array_stride = calculate_unsized_array_stride(deref);
 
    /* Compute the offset to the start if the dereference as well as other
-    * information we need to configure the length
+    * information we need to calculate the length.
     */
    setup_for_load_or_store(var, deref,
-                           &offset, &const_offset,
+                           &base_offset, &const_offset,
                            &row_major, &matrix_columns);
+   /* array.length() =
+      max((buffer_object_size - offset_of_array) / stride_of_array, 0) */
+   ir_expression *buffer_size = emit_ssbo_get_buffer_size();
 
-   /* Now that we've calculated the offset to the start of the
-    * dereference, emit writes from the temporary to memory
-    */
-   ir_variable *write_offset =
-      new(mem_ctx) ir_variable(glsl_type::uint_type,
-                               "ssbo_length_temp_offset",
-                               ir_var_temporary);
-   base_ir->insert_after(write_offset);
-   base_ir->insert_after(assign(write_offset, offset));
+   ir_expression *offset_of_array = new(mem_ctx)
+      ir_expression(ir_binop_add, base_offset,
+                    new(mem_ctx) ir_constant(const_offset));
+   ir_expression *offset_of_array_int = new(mem_ctx)
+      ir_expression(ir_unop_u2i, offset_of_array);
 
-   ir_expression *new_ssbo =
-      emit_ssbo_unsized_array_length(write_offset, const_offset,
-                                     unsized_array_stride);
+   ir_expression *sub = new(mem_ctx)
+      ir_expression(ir_binop_sub, buffer_size, offset_of_array_int);
+   ir_expression *div =  new(mem_ctx)
+      ir_expression(ir_binop_div, sub,
+                    new(mem_ctx) ir_constant(unsized_array_stride));
+   ir_expression *max = new(mem_ctx)
+      ir_expression(ir_binop_max, div, new(mem_ctx) ir_constant(0));
 
-   return new_ssbo;
+   return max;
 }
 
 void
