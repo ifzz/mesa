@@ -67,7 +67,7 @@ INTRINSIC(interp_var_at_offset, 1, ARR(2), true, 0, 1, 0,
  * and stride of unsized array.
  */
 
-INTRINSIC(ssbo_unsized_array_length, 3, ARR(1, 1, 1), true, 1, 0, 0,
+INTRINSIC(ssbo_unsized_array_length, 1, ARR(1), true, 1, 0, 0,
           NIR_INTRINSIC_CAN_ELIMINATE | NIR_INTRINSIC_CAN_REORDER)
 
 /*
