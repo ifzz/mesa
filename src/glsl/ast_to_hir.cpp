@@ -6445,6 +6445,35 @@ ast_interface_block::hir(exec_list *instructions,
          handle_tess_ctrl_shader_output_decl(state, loc, var);
 
       for (unsigned i = 0; i < num_variables; i++) {
+         if (var->data.mode == ir_var_shader_storage) {
+            /* For readonly and writeonly qualifiers the field definition,
+             * if set, overwrites the layout qualifier.
+             */
+            bool read_only = this->layout.flags.q.read_only;
+            bool write_only = this->layout.flags.q.write_only;
+
+            if (fields[i].image_read_only) {
+               read_only = true;
+               write_only = false;
+            } else if (fields[i].image_write_only) {
+               read_only = false;
+               write_only = true;
+            }
+
+            var->data.read_only = read_only;
+            var->data.write_only = write_only;
+
+            /* For other qualifiers, we set the flag if either the layout
+             * qualifier or the field qualifier are set
+             */
+            var->data.image_coherent = fields[i].image_coherent ||
+                                        this->layout.flags.q.coherent;
+            var->data.image_volatile = fields[i].image_volatile ||
+                                        this->layout.flags.q._volatile;
+            var->data.image_restrict = fields[i].image_restrict ||
+                                        this->layout.flags.q.restrict_flag;
+         }
+
          if (fields[i].type->is_unsized_array()) {
             if (var_mode == ir_var_shader_storage) {
                if (i != (num_variables - 1)) {
