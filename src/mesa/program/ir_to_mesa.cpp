@@ -1344,7 +1344,7 @@ ir_to_mesa_visitor::visit(ir_expression *ir)
    case ir_unop_dFdy_coarse:
    case ir_unop_dFdy_fine:
    case ir_unop_subroutine_to_int:
-   case ir_triop_ssbo_unsized_array_length:
+   case ir_unop_ssbo_get_buffer_size:
       assert(!"not supported");
       break;
 

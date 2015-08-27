@@ -341,6 +341,8 @@ ir_expression::ir_expression(int op, ir_rvalue *op0)
       this->type = glsl_type::get_instance(GLSL_TYPE_INT,
 					   op0->type->vector_elements, 1);
       break;
+
+   case ir_unop_ssbo_get_buffer_size:
    case ir_unop_ssbo_unsized_array_length:
       this->type = glsl_type::int_type;
       break;
@@ -475,10 +477,6 @@ ir_expression::ir_expression(int op, ir_rvalue *op0, ir_rvalue *op1,
       this->type = op1->type;
       break;
 
-   case ir_triop_ssbo_unsized_array_length:
-      this->type = glsl_type::int_type;
-      break;
-
    default:
       assert(!"not reached: missing automatic type setup for ir_expression");
       this->type = glsl_type::float_type;
@@ -578,7 +576,8 @@ static const char *const operator_strs[] = {
    "noise",
    "subroutine_to_int",
    "interpolate_at_centroid",
-   "ssbo_unsized_array_length_parser",
+   "ssbo_get_buffer_size",
+   "ssbo_unsized_array_length",
    "+",
    "-",
    "*",
@@ -619,7 +618,6 @@ static const char *const operator_strs[] = {
    "csel",
    "bfi",
    "bitfield_extract",
-   "ssbo_unsized_array_length",
    "vector_insert",
    "bitfield_insert",
    "vector",

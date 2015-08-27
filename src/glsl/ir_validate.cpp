@@ -409,6 +409,11 @@ ir_validate::visit_leave(ir_expression *ir)
       assert(ir->operands[0]->type->is_float());
       break;
 
+   case ir_unop_ssbo_get_buffer_size:
+      assert(ir->type == glsl_type::int_type);
+      assert(ir->operands[0]->type == glsl_type::uint_type);
+      break;
+
    case ir_unop_ssbo_unsized_array_length:
       assert(ir->type == glsl_type::int_type);
       assert(ir->operands[0]->type->is_array());
@@ -662,13 +667,6 @@ ir_validate::visit_leave(ir_expression *ir)
       assert(ir->operands[1]->type == ir->type);
       assert(ir->operands[2]->type == glsl_type::int_type);
       assert(ir->operands[3]->type == glsl_type::int_type);
-      break;
-
-   case ir_triop_ssbo_unsized_array_length:
-      assert(ir->type == glsl_type::int_type);
-      assert(ir->operands[0]->type == glsl_type::uint_type);
-      assert(ir->operands[1]->type == glsl_type::uint_type);
-      assert(ir->operands[2]->type == glsl_type::uint_type);
       break;
 
    case ir_quadop_vector:
