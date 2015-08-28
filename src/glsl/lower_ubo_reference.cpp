@@ -244,7 +244,12 @@ interface_field_name(void *mem_ctx, char *base_name, ir_dereference *d,
 
          break;
       }
+      case ir_type_swizzle : {
+         ir_swizzle *s = (ir_swizzle *) d;
 
+         d = s->val->as_dereference();
+         break;
+      }
       default:
          assert(!"Should not get here.");
          break;
@@ -425,6 +430,16 @@ lower_ubo_reference_visitor::setup_for_load_or_store(ir_variable *var,
 
          *const_offset += intra_struct_offset;
          deref = deref_record->record->as_dereference();
+         break;
+      }
+
+      case ir_type_swizzle: {
+         ir_swizzle *deref_swizzle = (ir_swizzle *) deref;
+
+         assert(deref_swizzle->mask.num_components == 1);
+
+         *const_offset += deref_swizzle->mask.x * sizeof(int);
+         deref = deref_swizzle->val->as_dereference();
          break;
       }
 
@@ -1020,7 +1035,8 @@ lower_ubo_reference_visitor::lower_ssbo_atomic_intrinsic(ir_call *ir)
    ir_instruction *inst = (ir_instruction *) param;
    assert(inst->ir_type == ir_type_dereference_variable ||
           inst->ir_type == ir_type_dereference_array ||
-          inst->ir_type == ir_type_dereference_record);
+          inst->ir_type == ir_type_dereference_record ||
+          inst->ir_type == ir_type_swizzle);
 
    ir_dereference *deref = (ir_dereference *) inst;
    assert(deref->type->is_scalar() && deref->type->is_integer());
