@@ -185,19 +185,6 @@ lower_vec_to_movs_block(nir_block *block, void *mem_ctx)
             if (list_length(&parent_dest_reg->uses) != 1)
                continue;
 
-            /* @FIXME: by now I want to have fine-grained control over what ALU
-             * ops are safe to propagate. The switch below can be used to
-             * enable/disable this pass for the different ALU opcodes.
-             * I have detected that propagating imov ops doesn't work, but still
-             * have not analyzed why.
-             */
-            switch (parent_alu_instr->op) {
-            case nir_op_imov:
-               continue;
-            default:
-               break;
-            }
-
             nir_alu_instr *new_alu_instr =
                clone_alu_instr_and_override_dest(parent_alu_instr, &vec->dest,
                                                  i, mem_ctx);
