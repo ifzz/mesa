@@ -184,9 +184,21 @@ brw_create_nir(struct brw_context *brw,
    nir_convert_from_ssa(nir, is_scalar);
    nir_validate_shader(nir);
 
+   if (unlikely(debug_enabled)) {
+      fprintf(stderr, "NIR (before lower_vec_to_movs) for %s shader:\n",
+              _mesa_shader_stage_to_string(stage));
+      nir_print_shader(nir, stderr);
+   }
+
    if (!is_scalar) {
       nir_lower_vec_to_movs(nir);
       nir_validate_shader(nir);
+   }
+
+   if (unlikely(debug_enabled)) {
+      fprintf(stderr, "NIR (after lower_vec_to_movs) for %s shader:\n",
+              _mesa_shader_stage_to_string(stage));
+      nir_print_shader(nir, stderr);
    }
 
    /* This is the last pass we run before we start emitting stuff.  It
