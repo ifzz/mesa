@@ -190,6 +190,11 @@ lower_vec_to_movs_block(nir_block *block, void *mem_ctx)
                                                  i, mem_ctx);
             finished_write_mask |= new_alu_instr->dest.write_mask;
 
+            /* Insert the new instruction with the overwritten destination
+             * just before the old one.
+            */
+            nir_instr_insert_before(&parent_alu_instr->instr, &new_alu_instr->instr);
+
             /* Remove the old ALU instruction */
             nir_instr_remove(&parent_alu_instr->instr);
             ralloc_free(parent_alu_instr);
@@ -197,9 +202,6 @@ lower_vec_to_movs_block(nir_block *block, void *mem_ctx)
             /* Remove the intermediate register, if not used anymore */
             if (list_length(&parent_dest_reg->defs) == 0)
                nir_reg_remove(parent_dest_reg);
-
-            /* Insert the new instruction with the overwritten destination */
-            nir_instr_insert_before(&vec->instr, &new_alu_instr->instr);
          }
       }
 
