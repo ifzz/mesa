@@ -1353,11 +1353,14 @@ unsigned
 glsl_type::std430_base_alignment(bool row_major) const
 {
    unsigned base_alignment = 0;
-   /* When using the "std430" storage layout, shader storage
+   /* OpenGL 4.30 spec, section 7.6.2.2 "Standard Uniform Block Layout":
+    *
+    * "When using the "std430" storage layout, shader storage
     * blocks will be laid out in buffer storage identically to uniform and
     * shader storage blocks using the "std140" layout, except that the base
     * alignment of arrays of scalars and vectors in rule (4) and of structures
-    * in rule (9) are not rounded up a multiple of the base alignment of a vec4.
+    * in rule (9) are not rounded up a multiple of the base alignment of a
+    * vec4."
     */
 
    /* (1) If the member is a scalar consuming <N> basic machine units, the
@@ -1384,22 +1387,17 @@ glsl_type::std430_size(bool row_major) const
 {
    unsigned N = is_double() ? 8 : 4;
 
-   /* (1) If the member is a scalar consuming <N> basic machine units, the
-    *     base alignment is <N>.
+   /* OpenGL 4.30 spec, section 7.6.2.2 "Standard Uniform Block Layout":
     *
-    * (2) If the member is a two- or four-component vector with components
-    *     consuming <N> basic machine units, the base alignment is 2<N> or
-    *     4<N>, respectively.
-    *
-    * (3) If the member is a three-component vector with components consuming
-    *     <N> basic machine units, the base alignment is 4<N>.
+    * "When using the "std430" storage layout, shader storage
+    * blocks will be laid out in buffer storage identically to uniform and
+    * shader storage blocks using the "std140" layout, except that the base
+    * alignment of arrays of scalars and vectors in rule (4) and of structures
+    * in rule (9) are not rounded up a multiple of the base alignment of a
+    * vec4."
     */
-   if (this->is_scalar() || this->is_vector()) {
-      if (this->vector_elements > 2)
-         return glsl_align(this->vector_elements * N, 16);
-      else
+   if (this->is_scalar() || this->is_vector())
          return this->vector_elements * N;
-   }
 
    if (this->without_array()->is_matrix()) {
       const struct glsl_type *element_type;
@@ -1430,12 +1428,6 @@ glsl_type::std430_size(bool row_major) const
       return array_type->std430_size(false);
    }
 
-   /* When using the "std430" storage layout, shader storage
-    * blocks will be laid out in buffer storage identically to uniform and
-    * shader storage blocks using the "std140" layout, except that the base
-    * alignment of arrays of scalars and vectors in rule (4) and of structures
-    * in rule (9) are not rounded up a multiple of the base alignment of a vec4.
-    */
    if (this->is_array())
          return this->length * this->fields.array->std430_size(row_major);
 
