@@ -2777,6 +2777,18 @@ basic_interface_block:
       block->block_name = $2;
       block->declarations.push_degenerate_list_at_head(& $4->link);
 
+      if ($1.flags.q.buffer) {
+         if (!state->has_shader_storage_buffer_objects()) {
+            _mesa_glsl_error(& @1, state,
+                             "#version 430 / GL_ARB_shader_storage_buffer_object "
+                             "required for defining shader storage blocks");
+         } else if (state->ARB_shader_storage_buffer_object_warn) {
+            _mesa_glsl_warning(& @1, state,
+                               "#version 430 / GL_ARB_shader_storage_buffer_object "
+                               "required for defining shader storage blocks");
+         }
+      }
+
       /* Since block arrays require names, and both features are added in
        * the same language versions, we don't have to explicitly
        * version-check both things.
