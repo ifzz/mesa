@@ -725,12 +725,17 @@ get_programiv(struct gl_context *ctx, GLuint program, GLenum pname,
       *params = max_len;
       return;
    }
-   case GL_ACTIVE_UNIFORM_BLOCKS:
+   case GL_ACTIVE_UNIFORM_BLOCKS: {
+      unsigned i;
+
       if (!has_ubo)
          break;
 
-      *params = shProg->NumUniformBlocks;
+      for (i = 0, *params = 0; i < shProg->NumProgramResourceList; i++)
+         if (shProg->ProgramResourceList[i].Type == GL_UNIFORM_BLOCK)
+            (*params)++;
       return;
+   }
    case GL_PROGRAM_BINARY_RETRIEVABLE_HINT:
       /* This enum isn't part of the OES extension for OpenGL ES 2.0.  It is
        * only available with desktop OpenGL 3.0+ with the
