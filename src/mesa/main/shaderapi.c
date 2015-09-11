@@ -713,7 +713,7 @@ get_programiv(struct gl_context *ctx, GLuint program, GLenum pname,
       if (!has_ubo)
          break;
 
-      for (i = 0; i < shProg->NumUniformBlocks; i++) {
+      for (i = 0; i < shProg->NumUniformShaderStorageBlocks; i++) {
 	 /* Add one for the terminating NUL character.
 	  */
 	 const GLint len = strlen(shProg->UniformBlocks[i].Name) + 1;
