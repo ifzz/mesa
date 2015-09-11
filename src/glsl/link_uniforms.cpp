@@ -467,7 +467,7 @@ public:
          if (var->is_interface_instance() && var->type->is_array()) {
             unsigned l = strlen(var->get_interface_type()->name);
 
-            for (unsigned i = 0; i < prog->NumUniformBlocks; i++) {
+            for (unsigned i = 0; i < prog->NumUniformShaderStorageBlocks; i++) {
                if (strncmp(var->get_interface_type()->name,
                            prog->UniformBlocks[i].Name,
                            l) == 0
@@ -477,7 +477,7 @@ public:
                }
             }
          } else {
-            for (unsigned i = 0; i < prog->NumUniformBlocks; i++) {
+            for (unsigned i = 0; i < prog->NumUniformShaderStorageBlocks; i++) {
                if (strcmp(var->get_interface_type()->name,
                           prog->UniformBlocks[i].Name) == 0) {
                   ubo_block_index = i;

@@ -1895,7 +1895,7 @@ vec4_visitor::visit(ir_expression *ir)
           */
          brw_mark_surface_used(&prog_data->base,
                                prog_data->base.binding_table.ubo_start +
-                               shader_prog->NumUniformBlocks - 1);
+                               shader_prog->NumUniformShaderStorageBlocks - 1);
       }
 
       if (const_offset_ir) {
@@ -2515,7 +2515,7 @@ vec4_visitor::visit_store_ssbo_intrinsic(ir_call *ir)
 
       brw_mark_surface_used(&prog_data->base,
                             prog_data->base.binding_table.ubo_start +
-                            shader_prog->NumUniformBlocks - 1);
+                            shader_prog->NumUniformShaderStorageBlocks - 1);
    }
 
    /* Offset */
@@ -2669,7 +2669,7 @@ vec4_visitor::visit_atomic_intrinsic(ir_call *ir)
        */
       brw_mark_surface_used(&prog_data->base,
                             prog_data->base.binding_table.ubo_start +
-                            shader_prog->NumUniformBlocks - 1);
+                            shader_prog->NumUniformShaderStorageBlocks - 1);
    }
 
    /* offset */
@@ -2782,7 +2782,7 @@ vec4_visitor::visit_load_ssbo_intrinsic(ir_call *ir)
        */
       brw_mark_surface_used(&prog_data->base,
                             prog_data->base.binding_table.ubo_start +
-                            shader_prog->NumUniformBlocks - 1);
+                            shader_prog->NumUniformShaderStorageBlocks - 1);
    }
 
    /* Offset */
