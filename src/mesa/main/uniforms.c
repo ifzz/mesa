@@ -1002,10 +1002,10 @@ _mesa_UniformBlockBinding(GLuint program,
    if (!shProg)
       return;
 
-   if (uniformBlockIndex >= shProg->NumUniformBlocks) {
+   if (uniformBlockIndex >= shProg->NumUniformShaderStorageBlocks) {
       _mesa_error(ctx, GL_INVALID_VALUE,
 		  "glUniformBlockBinding(block index %u >= %u)",
-		  uniformBlockIndex, shProg->NumUniformBlocks);
+		  uniformBlockIndex, shProg->NumUniformShaderStorageBlocks);
       return;
    }
 
@@ -1054,10 +1054,10 @@ _mesa_ShaderStorageBlockBinding(GLuint program,
    if (!shProg)
       return;
 
-   if (shaderStorageBlockIndex >= shProg->NumUniformBlocks) {
+   if (shaderStorageBlockIndex >= shProg->NumUniformShaderStorageBlocks) {
       _mesa_error(ctx, GL_INVALID_VALUE,
 		  "glShaderStorageBlockBinding(block index %u >= %u)",
-		  shaderStorageBlockIndex, shProg->NumUniformBlocks);
+		  shaderStorageBlockIndex, shProg->NumUniformShaderStorageBlocks);
       return;
    }
 

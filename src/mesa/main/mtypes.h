@@ -2686,7 +2686,7 @@ struct gl_shader_program
     */
    unsigned LastClipDistanceArraySize;
 
-   unsigned NumUniformBlocks;
+   unsigned NumUniformShaderStorageBlocks;
    struct gl_uniform_block *UniformBlocks;
 
    /**
