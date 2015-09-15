@@ -922,6 +922,15 @@ vec4_visitor::nir_emit_intrinsic(nir_intrinsic_instr *instr)
       break;
    }
 
+   case nir_intrinsic_memory_barrier: {
+      const vec4_builder bld =
+         vec4_builder(this).at_end().annotate(current_annotation, base_ir);
+      const src_reg tmp = src_reg(this, glsl_type::uint_type);
+      bld.emit(SHADER_OPCODE_MEMORY_FENCE, dest, tmp)
+         ->regs_written = 2;
+      break;
+   }
+
    default:
       unreachable("Unknown intrinsic");
    }
