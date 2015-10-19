@@ -392,12 +392,12 @@ namespace brw {
       {
          const fs_builder ubld = exec_all();
          const dst_reg chan_index = component(vgrf(BRW_REGISTER_TYPE_UD), 0);
-         const dst_reg dst = component(vgrf(src.type), 0);
+         const dst_reg dst = vgrf(src.type);
 
          ubld.emit(SHADER_OPCODE_FIND_LIVE_CHANNEL, chan_index);
          ubld.emit(SHADER_OPCODE_BROADCAST, dst, src, chan_index);
 
-         return src_reg(dst);
+         return component(src_reg(dst), 0);
       }
 
       /**
