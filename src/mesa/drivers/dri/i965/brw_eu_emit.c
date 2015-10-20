@@ -810,7 +810,17 @@ brw_next_insn(struct brw_codegen *p, unsigned opcode)
    const struct brw_device_info *devinfo = p->devinfo;
    brw_inst *insn;
 
-   if (p->nr_insn + 1 > p->store_size) {
+
+   /* Book enough room for one or more consecutive SEND* instructions at the
+    * end of the p->store table in order to avoid reallocating p->store in
+    * the middle of brw_send_indirect_message().
+    *
+    * The 32 value was chosen arbitrary to make this problem less likely to
+    * happen and because it has low impact in p->store (its initial size is
+    * 1024).
+    */
+   if ((p->nr_insn + 32 > p->store_size && opcode != BRW_OPCODE_SEND) ||
+       (p->nr_insn + 1 > p->store_size)) {
       p->store_size <<= 1;
       p->store = reralloc(p->mem_ctx, p->store, brw_inst, p->store_size);
    }
