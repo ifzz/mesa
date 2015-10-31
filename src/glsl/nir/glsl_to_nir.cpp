@@ -73,7 +73,7 @@ public:
 private:
    void create_overload(ir_function_signature *ir, nir_function *function);
    void add_instr(nir_instr *instr, unsigned num_components);
-   nir_src evaluate_rvalue(ir_rvalue *ir);
+   nir_ssa_def *evaluate_rvalue(ir_rvalue *ir);
 
    nir_alu_instr *emit(nir_op op, unsigned dest_size, nir_src *srcs);
    nir_alu_instr *emit(nir_op op, unsigned dest_size, nir_src src1);
@@ -558,7 +558,8 @@ nir_visitor::visit(ir_loop *ir)
 void
 nir_visitor::visit(ir_if *ir)
 {
-   nir_src condition = evaluate_rvalue(ir->condition);
+   nir_src condition = 
+      nir_src_for_ssa(evaluate_rvalue(ir->condition));
 
    exec_list *old_list = this->cf_node_list;
 
@@ -589,7 +590,8 @@ nir_visitor::visit(ir_discard *ir)
    if (ir->condition) {
       discard = nir_intrinsic_instr_create(this->shader,
                                            nir_intrinsic_discard_if);
-      discard->src[0] = evaluate_rvalue(ir->condition);
+      discard->src[0] =
+         nir_src_for_ssa(evaluate_rvalue(ir->condition));
    } else {
       discard = nir_intrinsic_instr_create(this->shader, nir_intrinsic_discard);
    }
@@ -780,7 +782,8 @@ nir_visitor::visit(ir_call *ir)
          /* Set the address argument, extending the coordinate vector to four
           * components.
           */
-         const nir_src src_addr = evaluate_rvalue((ir_dereference *)param);
+         const nir_src src_addr =
+            nir_src_for_ssa(evaluate_rvalue((ir_dereference *)param));
          nir_alu_instr *instr_addr = nir_alu_instr_create(shader, nir_op_vec4);
          nir_ssa_dest_init(&instr_addr->instr, &instr_addr->dest.dest, 4, NULL);
 
@@ -801,7 +804,8 @@ nir_visitor::visit(ir_call *ir)
           * images.
           */
          if (type->sampler_dimensionality == GLSL_SAMPLER_DIM_MS) {
-            instr->src[1] = evaluate_rvalue((ir_dereference *)param);
+            instr->src[1] = 
+               nir_src_for_ssa(evaluate_rvalue((ir_dereference *)param));
             param = param->get_next();
          } else {
             instr->src[1] = nir_src_for_ssa(&instr_undef->def);
@@ -809,12 +813,14 @@ nir_visitor::visit(ir_call *ir)
 
          /* Set the intrinsic parameters. */
          if (!param->is_tail_sentinel()) {
-            instr->src[2] = evaluate_rvalue((ir_dereference *)param);
+            instr->src[2] =
+               nir_src_for_ssa(evaluate_rvalue((ir_dereference *)param));
             param = param->get_next();
          }
 
          if (!param->is_tail_sentinel()) {
-            instr->src[3] = evaluate_rvalue((ir_dereference *)param);
+            instr->src[3] =
+               nir_src_for_ssa(evaluate_rvalue((ir_dereference *)param));
             param = param->get_next();
          }
          nir_instr_insert_after_cf_list(this->cf_node_list, &instr->instr);
@@ -847,7 +853,7 @@ nir_visitor::visit(ir_call *ir)
             op = nir_intrinsic_store_ssbo_indirect;
             ralloc_free(instr);
             instr = nir_intrinsic_instr_create(shader, op);
-            instr->src[2] = evaluate_rvalue(offset);
+            instr->src[2] = nir_src_for_ssa(evaluate_rvalue(offset));
             instr->const_index[0] = 0;
          } else {
             instr->const_index[0] = const_offset->value.u[0];
@@ -855,10 +861,10 @@ nir_visitor::visit(ir_call *ir)
 
          instr->const_index[1] = write_mask->value.u[0];
 
-         instr->src[0] = evaluate_rvalue(val);
+         instr->src[0] = nir_src_for_ssa(evaluate_rvalue(val));
          instr->num_components = val->type->vector_elements;
 
-         instr->src[1] = evaluate_rvalue(block);
+         instr->src[1] = nir_src_for_ssa(evaluate_rvalue(block));
          nir_instr_insert_after_cf_list(this->cf_node_list, &instr->instr);
          break;
       }
@@ -875,14 +881,14 @@ nir_visitor::visit(ir_call *ir)
             op = nir_intrinsic_load_ssbo_indirect;
             ralloc_free(instr);
             instr = nir_intrinsic_instr_create(shader, op);
-            instr->src[1] = evaluate_rvalue(offset);
+            instr->src[1] = nir_src_for_ssa(evaluate_rvalue(offset));
             instr->const_index[0] = 0;
             dest = &instr->dest;
          } else {
             instr->const_index[0] = const_offset->value.u[0];
          }
 
-         instr->src[0] = evaluate_rvalue(block);
+         instr->src[0] = nir_src_for_ssa(evaluate_rvalue(block));
 
          const glsl_type *type = ir->return_deref->var->type;
          instr->num_components = type->vector_elements;
@@ -942,24 +948,24 @@ nir_visitor::visit(ir_call *ir)
          /* Block index */
          exec_node *param = ir->actual_parameters.get_head();
          ir_instruction *inst = (ir_instruction *) param;
-         instr->src[0] = evaluate_rvalue(inst->as_rvalue());
+         instr->src[0] = nir_src_for_ssa(evaluate_rvalue(inst->as_rvalue()));
 
          /* Offset */
          param = param->get_next();
          inst = (ir_instruction *) param;
-         instr->src[1] = evaluate_rvalue(inst->as_rvalue());
+         instr->src[1] = nir_src_for_ssa(evaluate_rvalue(inst->as_rvalue()));
 
          /* data1 parameter (this is always present) */
          param = param->get_next();
          inst = (ir_instruction *) param;
-         instr->src[2] = evaluate_rvalue(inst->as_rvalue());
+         instr->src[2] = nir_src_for_ssa(evaluate_rvalue(inst->as_rvalue()));
 
          /* data2 parameter (only with atomic_comp_swap) */
          if (param_count == 4) {
             assert(op == nir_intrinsic_ssbo_atomic_comp_swap);
             param = param->get_next();
             inst = (ir_instruction *) param;
-            instr->src[3] = evaluate_rvalue(inst->as_rvalue());
+            instr->src[3] = nir_src_for_ssa(evaluate_rvalue(inst->as_rvalue()));
          }
 
          /* Atomic result */
@@ -1022,7 +1028,7 @@ nir_visitor::visit(ir_assignment *ir)
 
       if (ir->condition) {
          nir_if *if_stmt = nir_if_create(this->shader);
-         if_stmt->condition = evaluate_rvalue(ir->condition);
+         if_stmt->condition = nir_src_for_ssa(evaluate_rvalue(ir->condition));
          nir_cf_node_insert_end(this->cf_node_list, &if_stmt->cf_node);
          nir_instr_insert_after_cf_list(&if_stmt->then_list, &copy->instr);
       } else {
@@ -1035,7 +1041,7 @@ nir_visitor::visit(ir_assignment *ir)
 
    ir->lhs->accept(this);
    nir_deref_var *lhs_deref = this->deref_head;
-   nir_src src = evaluate_rvalue(ir->rhs);
+   nir_src src = nir_src_for_ssa(evaluate_rvalue(ir->rhs));
 
    if (ir->write_mask != (1 << num_components) - 1 && ir->write_mask != 0) {
       /*
@@ -1098,7 +1104,7 @@ nir_visitor::visit(ir_assignment *ir)
 
    if (ir->condition) {
       nir_if *if_stmt = nir_if_create(this->shader);
-      if_stmt->condition = evaluate_rvalue(ir->condition);
+      if_stmt->condition = nir_src_for_ssa(evaluate_rvalue(ir->condition));
       nir_cf_node_insert_end(this->cf_node_list, &if_stmt->cf_node);
       nir_instr_insert_after_cf_list(&if_stmt->then_list, &store->instr);
    } else {
@@ -1154,7 +1160,7 @@ nir_visitor::add_instr(nir_instr *instr, unsigned num_components)
    this->result = instr;
 }
 
-nir_src
+nir_ssa_def *
 nir_visitor::evaluate_rvalue(ir_rvalue* ir)
 {
    ir->accept(this);
@@ -1175,7 +1181,7 @@ nir_visitor::evaluate_rvalue(ir_rvalue* ir)
    nir_dest *dest = get_instr_dest(this->result);
    assert(dest->is_ssa);
 
-   return nir_src_for_ssa(&dest->ssa);
+   return &dest->ssa;
 }
 
 nir_alu_instr *
@@ -1231,9 +1237,9 @@ nir_visitor::visit(ir_expression *ir)
       nir_intrinsic_instr *load = nir_intrinsic_instr_create(this->shader, op);
       load->num_components = ir->type->vector_elements;
       load->const_index[0] = const_index ? const_index->value.u[0] : 0; /* base offset */
-      load->src[0] = evaluate_rvalue(ir->operands[0]);
+      load->src[0] = nir_src_for_ssa(evaluate_rvalue(ir->operands[0]));
       if (!const_index)
-         load->src[1] = evaluate_rvalue(ir->operands[1]);
+         load->src[1] = nir_src_for_ssa(evaluate_rvalue(ir->operands[1]));
       add_instr(&load->instr, ir->type->vector_elements);
 
       /*
@@ -1311,7 +1317,7 @@ nir_visitor::visit(ir_expression *ir)
 
       if (intrin->intrinsic == nir_intrinsic_interp_var_at_offset ||
           intrin->intrinsic == nir_intrinsic_interp_var_at_sample)
-         intrin->src[0] = evaluate_rvalue(ir->operands[1]);
+         intrin->src[0] = nir_src_for_ssa(evaluate_rvalue(ir->operands[1]));
 
       add_instr(&intrin->instr, deref->type->vector_elements);
 
@@ -1340,7 +1346,7 @@ nir_visitor::visit(ir_expression *ir)
 
    nir_src srcs[4];
    for (unsigned i = 0; i < ir->get_num_operands(); i++)
-      srcs[i] = evaluate_rvalue(ir->operands[i]);
+      srcs[i] = nir_src_for_ssa(evaluate_rvalue(ir->operands[i]));
 
    glsl_base_type types[4];
    for (unsigned i = 0; i < ir->get_num_operands(); i++)
@@ -1548,7 +1554,7 @@ nir_visitor::visit(ir_expression *ir)
          this->shader,
          nir_intrinsic_get_buffer_size);
       load->num_components = ir->type->vector_elements;
-      load->src[0] = evaluate_rvalue(ir->operands[0]);
+      load->src[0] = nir_src_for_ssa(evaluate_rvalue(ir->operands[0]));
       add_instr(&load->instr, ir->type->vector_elements);
       return;
    }
@@ -1891,7 +1897,7 @@ nir_visitor::visit(ir_swizzle *ir)
 {
    nir_alu_instr *instr = emit(supports_ints ? nir_op_imov : nir_op_fmov,
                                ir->type->vector_elements,
-                               evaluate_rvalue(ir->val));
+                               nir_src_for_ssa(evaluate_rvalue(ir->val)));
 
    unsigned swizzle[4] = { ir->mask.x, ir->mask.y, ir->mask.z, ir->mask.w };
    for (unsigned i = 0; i < ir->type->vector_elements; i++)
@@ -2001,19 +2007,22 @@ nir_visitor::visit(ir_texture *ir)
 
    if (ir->coordinate != NULL) {
       instr->coord_components = ir->coordinate->type->vector_elements;
-      instr->src[src_number].src = evaluate_rvalue(ir->coordinate);
+      instr->src[src_number].src =
+         nir_src_for_ssa(evaluate_rvalue(ir->coordinate));
       instr->src[src_number].src_type = nir_tex_src_coord;
       src_number++;
    }
 
    if (ir->projector != NULL) {
-      instr->src[src_number].src = evaluate_rvalue(ir->projector);
+      instr->src[src_number].src =
+         nir_src_for_ssa(evaluate_rvalue(ir->projector));
       instr->src[src_number].src_type = nir_tex_src_projector;
       src_number++;
    }
 
    if (ir->shadow_comparitor != NULL) {
-      instr->src[src_number].src = evaluate_rvalue(ir->shadow_comparitor);
+      instr->src[src_number].src =
+         nir_src_for_ssa(evaluate_rvalue(ir->shadow_comparitor));
       instr->src[src_number].src_type = nir_tex_src_comparitor;
       src_number++;
    }
@@ -2027,7 +2036,8 @@ nir_visitor::visit(ir_texture *ir)
          for (unsigned i = 0; i < const_offset->type->vector_elements; i++)
             instr->const_offset[i] = const_offset->value.i[i];
       } else {
-         instr->src[src_number].src = evaluate_rvalue(ir->offset);
+         instr->src[src_number].src =
+            nir_src_for_ssa(evaluate_rvalue(ir->offset));
          instr->src[src_number].src_type = nir_tex_src_offset;
          src_number++;
       }
@@ -2035,7 +2045,8 @@ nir_visitor::visit(ir_texture *ir)
 
    switch (ir->op) {
    case ir_txb:
-      instr->src[src_number].src = evaluate_rvalue(ir->lod_info.bias);
+      instr->src[src_number].src =
+         nir_src_for_ssa(evaluate_rvalue(ir->lod_info.bias));
       instr->src[src_number].src_type = nir_tex_src_bias;
       src_number++;
       break;
@@ -2044,23 +2055,27 @@ nir_visitor::visit(ir_texture *ir)
    case ir_txf:
    case ir_txs:
       if (ir->lod_info.lod != NULL) {
-         instr->src[src_number].src = evaluate_rvalue(ir->lod_info.lod);
+         instr->src[src_number].src =
+            nir_src_for_ssa(evaluate_rvalue(ir->lod_info.lod));
          instr->src[src_number].src_type = nir_tex_src_lod;
          src_number++;
       }
       break;
 
    case ir_txd:
-      instr->src[src_number].src = evaluate_rvalue(ir->lod_info.grad.dPdx);
+      instr->src[src_number].src =
+         nir_src_for_ssa(evaluate_rvalue(ir->lod_info.grad.dPdx));
       instr->src[src_number].src_type = nir_tex_src_ddx;
       src_number++;
-      instr->src[src_number].src = evaluate_rvalue(ir->lod_info.grad.dPdy);
+      instr->src[src_number].src =
+         nir_src_for_ssa(evaluate_rvalue(ir->lod_info.grad.dPdy));
       instr->src[src_number].src_type = nir_tex_src_ddy;
       src_number++;
       break;
 
    case ir_txf_ms:
-      instr->src[src_number].src = evaluate_rvalue(ir->lod_info.sample_index);
+      instr->src[src_number].src =
+         nir_src_for_ssa(evaluate_rvalue(ir->lod_info.sample_index));
       instr->src[src_number].src_type = nir_tex_src_ms_index;
       src_number++;
       break;
@@ -2135,7 +2150,8 @@ nir_visitor::visit(ir_dereference_array *ir)
       deref->base_offset = const_index->value.u[0];
    } else {
       deref->deref_array_type = nir_deref_array_type_indirect;
-      deref->indirect = evaluate_rvalue(ir->array_index);
+      deref->indirect =
+         nir_src_for_ssa(evaluate_rvalue(ir->array_index));
    }
 
    ir->array->accept(this);
