@@ -28,7 +28,7 @@
 using namespace brw;
 
 bool
-fs_visitor::lower_load_payload()
+fs_visitor::lower_pack()
 {
    bool progress = false;
 
