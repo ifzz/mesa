@@ -581,6 +581,7 @@ fs_visitor::nir_emit_alu(const fs_builder &bld, nir_alu_instr *instr)
    case nir_op_i2f:
    case nir_op_u2f:
    case nir_op_f2d:
+   case nir_op_d2f:
       inst = bld.MOV(result, op[0]);
       inst->saturate = instr->dest.saturate;
       break;
@@ -589,24 +590,6 @@ fs_visitor::nir_emit_alu(const fs_builder &bld, nir_alu_instr *instr)
    case nir_op_f2u:
       bld.MOV(result, op[0]);
       break;
-
-   case nir_op_d2f: {
-      /* From the Broadwell PRM, 3D Media GPGPU, "Double Precision Float to
-       * Single Precision Float":
-       * 
-       *    The upper Dword of every Qword will be written with undefined
-       *    value when converting DF to F.
-       *
-       * So we need to allocate a temporary that's two registers, and then do
-       * a strided MOV to get the lower DWord of every Qword that has the
-       * result.
-       */
-
-      fs_reg temp = bld.vgrf(BRW_REGISTER_TYPE_F, 2);
-      bld.MOV(stride(temp, 2), op[0]);
-      bld.MOV(result, stride(temp, 2));
-      break;
-   }
 
    case nir_op_fsign: {
       /* AND(val, 0x80000000) gives the sign bit.
