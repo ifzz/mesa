@@ -720,7 +720,7 @@ brw_inst_bits(const brw_inst *inst, unsigned high, unsigned low)
    low %= 64;
 
    const uint64_t mask = (high - low == 63) ? ~0 :
-      (((1ull << (high - low + 1)) - 1) << low);
+      ((1ull << (high - low + 1)) - 1);
 
    return (inst->data[word] >> low) & mask;
 }
