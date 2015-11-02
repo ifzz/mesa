@@ -43,9 +43,9 @@ fs_visitor::lower_pack()
       const fs_builder ibld(this, block, inst);
 
       for (unsigned i = 0; i < inst->sources; i++) {
-         bld.MOV(stride(horiz_offset(retype(dst, inst->src[i].type), i),
-                        inst->sources),
-                 inst->src[i]); 
+         ibld.MOV(stride(horiz_offset(retype(dst, inst->src[i].type), i),
+                         inst->sources),
+                  inst->src[i]); 
       }
 
       inst->remove(block);
