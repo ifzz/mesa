@@ -1830,13 +1830,15 @@ vec4_visitor::convert_to_hw_regs()
          struct src_reg &src = inst->src[i];
          struct brw_reg reg;
          switch (src.file) {
-         case GRF:
-            reg = brw_vec8_grf(src.reg + src.reg_offset, 0);
+         case GRF: {
+            unsigned width = REG_SIZE / type_sz(src.type);
+            reg = brw_vecn_grf(width, src.reg + src.reg_offset, 0);
             reg.type = src.type;
             reg.dw1.bits.swizzle = src.swizzle;
             reg.abs = src.abs;
             reg.negate = src.negate;
             break;
+         }
 
          case IMM:
             reg = brw_imm_reg(src.type);
@@ -1846,11 +1848,12 @@ vec4_visitor::convert_to_hw_regs()
                reg.dw1.ud = src.fixed_hw_reg.dw1.ud;
             break;
 
-         case UNIFORM:
+         case UNIFORM: {
+            unsigned width = REG_SIZE / 2 / type_sz(src.type);
             reg = stride(brw_vec4_grf(prog_data->base.dispatch_grf_start_reg +
                                       (src.reg + src.reg_offset) / 2,
                                       ((src.reg + src.reg_offset) % 2) * 4),
-                         0, 4, 1);
+                         0, width, 1);
             reg.type = src.type;
             reg.dw1.bits.swizzle = src.swizzle;
             reg.abs = src.abs;
@@ -1859,6 +1862,7 @@ vec4_visitor::convert_to_hw_regs()
             /* This should have been moved to pull constants. */
             assert(!src.reladdr);
             break;
+         }
 
          case HW_REG:
             assert(src.type == src.fixed_hw_reg.type);
@@ -1880,11 +1884,13 @@ vec4_visitor::convert_to_hw_regs()
       struct brw_reg reg;
 
       switch (inst->dst.file) {
-      case GRF:
-         reg = brw_vec8_grf(dst.reg + dst.reg_offset, 0);
+      case GRF: {
+         unsigned width = REG_SIZE / type_sz(dst.type);
+         reg = brw_vecn_grf(width, dst.reg + dst.reg_offset, 0);
          reg.type = dst.type;
          reg.dw1.bits.writemask = dst.writemask;
          break;
+      }
 
       case MRF:
          assert(((dst.reg + dst.reg_offset) & ~(1 << 7)) < BRW_MAX_MRF(devinfo->gen));
