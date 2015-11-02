@@ -288,7 +288,7 @@ dst_reg
 vec4_visitor::get_nir_dest(nir_dest dest)
 {
    if (dest.is_ssa) {
-      dst_reg dst = dst_reg(GRF, alloc.allocate(1));
+      dst_reg dst = dst_reg(GRF, alloc.allocate(dest.ssa.bit_size / 32));
       nir_ssa_values[dest.ssa.index] = dst;
       return dst;
    } else {
