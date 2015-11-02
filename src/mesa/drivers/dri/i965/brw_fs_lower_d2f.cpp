@@ -59,8 +59,8 @@ fs_visitor::lower_d2f()
        * result.
        */
       fs_reg temp = ibld.vgrf(BRW_REGISTER_TYPE_F, 2);
-      bld.MOV(stride(temp, 2), inst->src[0]);
-      bld.MOV(dst, stride(temp, 2));
+      ibld.MOV(stride(temp, 2), inst->src[0]);
+      ibld.MOV(dst, stride(temp, 2));
 
       inst->remove(block);
       progress = true;
