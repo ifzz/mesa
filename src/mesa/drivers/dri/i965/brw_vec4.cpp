@@ -1841,7 +1841,10 @@ vec4_visitor::convert_to_hw_regs()
 
          case IMM:
             reg = brw_imm_reg(src.type);
-            reg.dw1.ud = src.fixed_hw_reg.dw1.ud;
+            if (src.type ==  BRW_REGISTER_TYPE_DF)
+               reg.dw1.df = src.fixed_hw_reg.dw1.df;
+            else
+               reg.dw1.ud = src.fixed_hw_reg.dw1.ud;
             break;
 
          case UNIFORM:
