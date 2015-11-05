@@ -1831,7 +1831,7 @@ vec4_visitor::convert_to_hw_regs()
          struct brw_reg reg;
          switch (src.file) {
          case GRF: {
-            unsigned width = REG_SIZE / type_sz(src.type);
+            unsigned width = REG_SIZE / MAX2(4, type_sz(src.type));
             reg = brw_vecn_grf(width, src.reg + src.reg_offset, 0);
             reg.type = src.type;
             reg.dw1.bits.swizzle = src.swizzle;
@@ -1849,7 +1849,7 @@ vec4_visitor::convert_to_hw_regs()
             break;
 
          case UNIFORM: {
-            unsigned width = REG_SIZE / 2 / type_sz(src.type);
+            unsigned width = REG_SIZE / 2 / MAX2(4, type_sz(src.type));
             reg = stride(brw_vec4_grf(prog_data->base.dispatch_grf_start_reg +
                                       (src.reg + src.reg_offset) / 2,
                                       ((src.reg + src.reg_offset) % 2) * 4),
@@ -1885,7 +1885,7 @@ vec4_visitor::convert_to_hw_regs()
 
       switch (inst->dst.file) {
       case GRF: {
-         unsigned width = REG_SIZE / type_sz(dst.type);
+         unsigned width = REG_SIZE / MAX2(4, type_sz(dst.type));
          reg = brw_vecn_grf(width, dst.reg + dst.reg_offset, 0);
          reg.type = dst.type;
          reg.dw1.bits.writemask = dst.writemask;
