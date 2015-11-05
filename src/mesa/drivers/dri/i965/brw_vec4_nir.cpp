@@ -1699,7 +1699,7 @@ glsl_type_for_nir_alu_type(nir_alu_type alu_type,
                            unsigned components)
 {
    return glsl_type::get_instance(brw_glsl_base_type_for_nir_type(alu_type),
-                                  1, components);
+                                  components, 1);
 }
 
 void
