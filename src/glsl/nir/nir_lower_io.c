@@ -59,7 +59,7 @@ type_size_vec4(const struct glsl_type *type)
       if (glsl_type_is_matrix(type)) {
          return glsl_get_matrix_columns(type) * multiplier;
       } else {
-         return 2;
+         return multiplier;
       }
    case GLSL_TYPE_ARRAY:
       return type_size_vec4(glsl_get_array_element(type)) * glsl_get_length(type);
