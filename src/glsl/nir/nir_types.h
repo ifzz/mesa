@@ -75,6 +75,7 @@ glsl_get_bit_size(enum glsl_base_type type)
    case GLSL_TYPE_UINT:
    case GLSL_TYPE_BOOL:
    case GLSL_TYPE_FLOAT: /* TODO handle mediump */
+   case GLSL_TYPE_SUBROUTINE:
       return 32;
 
    case GLSL_TYPE_DOUBLE:
