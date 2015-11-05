@@ -601,7 +601,7 @@ type_size_vec4(const struct glsl_type *type)
 	  * mess.  Hopefully a later pass over the code can pack scalars
 	  * down if appropriate.
 	  */
-	 return 2;
+	 return multiplier;
       }
    case GLSL_TYPE_ARRAY:
       assert(type->length > 0);
