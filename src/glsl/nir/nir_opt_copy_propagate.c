@@ -65,9 +65,12 @@ static bool is_vec(nir_alu_instr *instr)
 }
 
 static bool
-is_swizzleless_move(nir_alu_instr *instr)
+is_simple_move(nir_alu_instr *instr)
 {
    if (is_move(instr)) {
+      if (instr->src[0].negate || instr->src[0].abs)
+         return false;
+
       for (unsigned i = 0; i < 4; i++) {
          if (!((instr->dest.write_mask >> i) & 1))
             break;
@@ -79,6 +82,9 @@ is_swizzleless_move(nir_alu_instr *instr)
       nir_ssa_def *def = NULL;
       for (unsigned i = 0; i < nir_op_infos[instr->op].num_inputs; i++) {
          if (instr->src[i].swizzle[0] != i)
+            return false;
+
+         if (instr->src[i].negate || instr->src[i].abs)
             return false;
 
          if (def == NULL) {
@@ -107,7 +113,7 @@ copy_prop_src(nir_src *src, nir_instr *parent_instr, nir_if *parent_if)
       return false;
 
    nir_alu_instr *alu_instr = nir_instr_as_alu(src_instr);
-   if (!is_swizzleless_move(alu_instr))
+   if (!is_simple_move(alu_instr))
       return false;
 
    /* Don't let copy propagation land us with a phi that has more
