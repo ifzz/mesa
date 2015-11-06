@@ -198,6 +198,13 @@ brw_set_dest(struct brw_codegen *p, brw_inst *inst, struct brw_reg dest)
          brw_inst_set_dst_hstride(devinfo, inst, 1);
       }
    }
+
+   /* Generators should set a default exec_size of either 8 (SIMD4x2 or SIMD8)
+    * or 16 (SIMD16), as that's normally correct.  However, when dealing with
+    * small registers, we automatically reduce it to match the register size.
+    */
+   if (dest.width < BRW_EXECUTE_8)
+      brw_inst_set_exec_size(devinfo, inst, dest.width);
 }
 
 extern int reg_type_size[];
