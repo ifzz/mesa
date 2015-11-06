@@ -269,24 +269,6 @@ fs_visitor::nir_emit_system_values()
    }
 }
 
-/*
- * Get a type (float or int shouldn't matter) corresponding to the given bit
- * width.
- */
-
-static enum brw_reg_type
-brw_reg_type_for_bit_size(unsigned bit_size)
-{
-   switch (bit_size) {
-   case 32:
-      return BRW_REGISTER_TYPE_D;
-   case 64:
-      return BRW_REGISTER_TYPE_Q;
-   default:
-      unreachable("unsupported bit width");
-   }
-}
-
 void
 fs_visitor::nir_emit_impl(nir_function_impl *impl)
 {
@@ -295,8 +277,9 @@ fs_visitor::nir_emit_impl(nir_function_impl *impl)
       unsigned array_elems =
          reg->num_array_elems == 0 ? 1 : reg->num_array_elems;
       unsigned size = array_elems * reg->num_components;
-      nir_locals[reg->index] =
-         bld.vgrf(brw_reg_type_for_bit_size(reg->bit_size), size);
+      brw_reg_type reg_type =
+         reg->bit_size == 32 ? BRW_REGISTER_TYPE_F : BRW_REGISTER_TYPE_Q;
+      nir_locals[reg->index] = bld.vgrf(reg_type, size);
    }
 
    nir_ssa_values = reralloc(mem_ctx, nir_ssa_values, fs_reg,
@@ -1054,10 +1037,9 @@ void
 fs_visitor::nir_emit_load_const(const fs_builder &bld,
                                 nir_load_const_instr *instr)
 {
-   fs_reg reg =
-      bld.vgrf(brw_reg_type_for_bit_size(instr->def.bit_size),
-               instr->def.num_components);
-
+   brw_reg_type reg_type =
+      instr->def.bit_size == 32 ? BRW_REGISTER_TYPE_D : BRW_REGISTER_TYPE_Q;
+   fs_reg reg = bld.vgrf(reg_type, instr->def.num_components);
    switch (instr->def.bit_size) {
    case 32:
       for (unsigned i = 0; i < instr->def.num_components; i++)
@@ -1076,9 +1058,10 @@ fs_visitor::nir_emit_load_const(const fs_builder &bld,
 void
 fs_visitor::nir_emit_undef(const fs_builder &bld, nir_ssa_undef_instr *instr)
 {
+   brw_reg_type reg_type =
+      instr->def.bit_size == 32 ? BRW_REGISTER_TYPE_D : BRW_REGISTER_TYPE_Q;
    nir_ssa_values[instr->def.index] =
-      bld.vgrf(brw_reg_type_for_bit_size(instr->def.bit_size),
-               instr->def.num_components);
+      bld.vgrf(reg_type, instr->def.num_components);
 }
 
 static fs_reg
@@ -1125,9 +1108,10 @@ fs_reg
 fs_visitor::get_nir_dest(nir_dest dest)
 {
    if (dest.is_ssa) {
+      brw_reg_type reg_type =
+         dest.ssa.bit_size == 32 ? BRW_REGISTER_TYPE_F : BRW_REGISTER_TYPE_Q;
       nir_ssa_values[dest.ssa.index] =
-         bld.vgrf(brw_reg_type_for_bit_size(dest.ssa.bit_size),
-                  dest.ssa.num_components);
+         bld.vgrf(reg_type, dest.ssa.num_components);
       return nir_ssa_values[dest.ssa.index];
    }
 
