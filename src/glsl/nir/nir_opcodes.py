@@ -606,7 +606,7 @@ if (!isnormal(dst))
 
 # Combines the first component of each input to make a 2-component vector.
 
-binop_horiz("vec2", 2, tfloat, 1, tfloat, 1, tfloat, """
+binop_horiz("vec2", 2, tuint, 1, tuint, 1, tuint, """
 dst.x = src0.x;
 dst.y = src1.x;
 """)
@@ -614,9 +614,9 @@ dst.y = src1.x;
 def triop(name, ty, const_expr):
    opcode(name, 0, ty, [0, 0, 0], [ty, ty, ty], "", const_expr)
 def triop_horiz(name, output_size, src1_size, src2_size, src3_size, const_expr):
-   opcode(name, output_size, tfloat,
+   opcode(name, output_size, tuint,
    [src1_size, src2_size, src3_size],
-   [tfloat, tfloat, tfloat], "", const_expr)
+   [tuint, tuint, tuint], "", const_expr)
 
 triop("ffma", tfloat, "src0 * src1 + src2")
 
