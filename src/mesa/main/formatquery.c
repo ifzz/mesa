@@ -892,15 +892,20 @@ _mesa_GetInternalformativ(GLenum target, GLenum internalformat, GLenum pname,
    }
 
    case GL_COLOR_COMPONENTS:
-      /* @TODO */
+      if (_mesa_is_color_format(internalformat))
+         buffer[0] = GL_TRUE;
       break;
 
    case GL_DEPTH_COMPONENTS:
-      /* @TODO */
+      if (_mesa_is_depth_format(internalformat) ||
+          _mesa_is_depthstencil_format(internalformat))
+         buffer[0] = GL_TRUE;
       break;
 
    case GL_STENCIL_COMPONENTS:
-      /* @TODO */
+      if (_mesa_is_stencil_format(internalformat) ||
+          _mesa_is_depthstencil_format(internalformat))
+         buffer[0] = GL_TRUE;
       break;
 
    case GL_COLOR_RENDERABLE:
