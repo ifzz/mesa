@@ -375,6 +375,15 @@ fs_reg::fs_reg()
 }
 
 /** Immediate value constructor. */
+fs_reg::fs_reg(double df)
+{
+   init();
+   this->file = IMM;
+   this->type = BRW_REGISTER_TYPE_DF;
+   this->stride = 0;
+   this->df = df;
+}
+
 fs_reg::fs_reg(float f)
 {
    init();
