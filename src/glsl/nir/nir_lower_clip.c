@@ -87,7 +87,7 @@ load_clipdist_input(nir_builder *b, nir_variable *in, nir_ssa_def **val)
    load->num_components = 4;
    load->const_index[0] = in->data.driver_location;
    load->src[0] = nir_src_for_ssa(nir_imm_int(b, 0));
-   nir_ssa_dest_init(&load->instr, &load->dest, 4, NULL);
+   nir_ssa_dest_init(&load->instr, &load->dest, 4, 32, NULL);
    nir_builder_instr_insert(b, &load->instr);
 
    val[0] = nir_channel(b, &load->dest.ssa, 0);
@@ -187,7 +187,7 @@ lower_clip_vs(nir_function_impl *impl, unsigned ucp_enables,
                                           nir_intrinsic_load_user_clip_plane);
          ucp->num_components = 4;
          ucp->const_index[0] = plane;
-         nir_ssa_dest_init(&ucp->instr, &ucp->dest, 4, NULL);
+         nir_ssa_dest_init(&ucp->instr, &ucp->dest, 4, 32, NULL);
          nir_builder_instr_insert(&b, &ucp->instr);
 
          /* calculate clipdist[plane] - dot(ucp, cv): */
