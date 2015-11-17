@@ -45,7 +45,8 @@ convert_instr(nir_intrinsic_instr *instr)
 
    if (instr->dest.is_ssa) {
       nir_ssa_dest_init(&new_instr->instr, &new_instr->dest,
-                        instr->dest.ssa.num_components, NULL);
+                        instr->dest.ssa.num_components,
+                        instr->dest.ssa.bit_size, NULL);
       nir_ssa_def_rewrite_uses(&instr->dest.ssa,
                                nir_src_for_ssa(&new_instr->dest.ssa));
    } else {

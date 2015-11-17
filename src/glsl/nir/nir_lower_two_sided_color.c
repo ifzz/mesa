@@ -73,7 +73,7 @@ load_input(nir_builder *b, nir_variable *in)
    load = nir_intrinsic_instr_create(b->shader, nir_intrinsic_load_input);
    load->num_components = 4;
    load->const_index[0] = in->data.driver_location;
-   nir_ssa_dest_init(&load->instr, &load->dest, 4, NULL);
+   nir_ssa_dest_init(&load->instr, &load->dest, 4, 32, NULL);
    nir_builder_instr_insert(b, &load->instr);
 
    return &load->dest.ssa;
