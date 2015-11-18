@@ -1501,7 +1501,7 @@ generate_code(struct brw_codegen *p,
       unsigned pre_emit_nr_insn = p->nr_insn;
       bool fix_exec_size = false;
 
-      if (dst.width == BRW_WIDTH_4) {
+      if (dst.width == BRW_WIDTH_4 && type_sz(dst.type) != 8) {
          /* This happens in attribute fixups for "dual instanced" geometry
           * shaders, since they use attributes that are vec4's.  Since the exec
           * width is only 4, it's essential that the caller set
