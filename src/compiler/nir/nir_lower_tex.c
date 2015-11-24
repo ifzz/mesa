@@ -226,7 +226,8 @@ get_zero_or_one(nir_builder *b, nir_alu_type type, uint8_t swizzle_val)
       v.u32[0] = v.u32[1] = v.u32[2] = v.u32[3] = 0;
    } else {
       assert(swizzle_val == 5);
-      if (type == nir_type_float)
+      assert(nir_alu_type_get_type_size(type) < 64);
+      if (type == nir_type_float32)
          v.f32[0] = v.f32[1] = v.f32[2] = v.f32[3] = 1.0;
       else
          v.u32[0] = v.u32[1] = v.u32[2] = v.u32[3] = 1;
