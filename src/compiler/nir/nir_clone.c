@@ -354,6 +354,7 @@ clone_load_const(clone_state *state, const nir_load_const_instr *lc)
 
    memcpy(&nlc->value, &lc->value, sizeof(nlc->value));
 
+   nlc->def.bit_size = lc->def.bit_size;
    add_remap(state, &nlc->def, &lc->def);
 
    return nlc;
