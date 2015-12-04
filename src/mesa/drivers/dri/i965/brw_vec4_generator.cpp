@@ -477,9 +477,12 @@ generate_gs_svb_write(struct brw_codegen *p,
    int binding = inst->sol_binding;
    bool final_write = inst->sol_final_write;
 
+   brw_push_insn_state(p);
+   brw_set_default_exec_size(p, BRW_EXECUTE_4);
    /* Copy Vertex data into M0.x */
    brw_MOV(p, stride(dst, 4, 4, 1),
            stride(retype(src0, BRW_REGISTER_TYPE_UD), 4, 4, 1));
+   brw_pop_insn_state(p);
 
    brw_push_insn_state(p);
    /* Send SVB Write */
