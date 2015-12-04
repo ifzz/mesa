@@ -1089,6 +1089,7 @@ generate_code(struct brw_codegen *p,
       assert(inst->mlen <= BRW_MAX_MSG_LENGTH);
 
       unsigned pre_emit_nr_insn = p->nr_insn;
+      bool fix_exec_size = false;
 
       if (dst.width == BRW_WIDTH_4 && type_sz(dst.type) != 8) {
          /* This happens in attribute fixups for "dual instanced" geometry
@@ -1113,6 +1114,8 @@ generate_code(struct brw_codegen *p,
             if (src[i].file == BRW_GENERAL_REGISTER_FILE)
                src[i] = stride(src[i], 4, 4, 1);
          }
+         brw_set_default_exec_size(p, BRW_EXECUTE_4);
+         fix_exec_size = true;
       }
 
       bool is_64bit = false;
@@ -1579,7 +1582,7 @@ generate_code(struct brw_codegen *p,
          unreachable("Unsupported opcode");
       }
 
-      if (is_64bit)
+      if (is_64bit || fix_exec_size)
          brw_set_default_exec_size(p, BRW_EXECUTE_8);
 
       if (inst->opcode == VEC4_OPCODE_PACK_BYTES) {
