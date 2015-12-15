@@ -998,8 +998,9 @@ nir_visitor::visit(ir_call *ir)
          instr->num_components = type->vector_elements;
 
          /* Setup destination register */
+         unsigned bit_size = glsl_get_bit_size(type->base_type);
          nir_ssa_dest_init(&instr->instr, &instr->dest,
-                           type->vector_elements, NULL);
+                           type->vector_elements, bit_size, NULL);
 
          nir_builder_instr_insert(&b, &instr->instr);
          break;
