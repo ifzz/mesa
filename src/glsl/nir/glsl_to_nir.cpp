@@ -1282,7 +1282,6 @@ nir_visitor::visit(ir_expression *ir)
          nir_intrinsic_instr_create(this->shader, nir_intrinsic_load_ubo);
       load->num_components = ir->type->vector_elements;
       load->dest.ssa.bit_size = glsl_get_bit_size(ir->type->base_type);
-      load->const_index[0] = const_index ? const_index->value.u[0] : 0; /* base offset */
       load->src[0] = nir_src_for_ssa(evaluate_rvalue(ir->operands[0]));
       load->src[1] = nir_src_for_ssa(evaluate_rvalue(ir->operands[1]));
       add_instr(&load->instr, ir->type->vector_elements);
