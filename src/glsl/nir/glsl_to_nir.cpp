@@ -1060,8 +1060,10 @@ nir_visitor::visit(ir_call *ir)
 
          /* Atomic result */
          assert(ir->return_deref);
+         unsigned bit_size = glsl_get_bit_size(ir->return_deref->type->base_type);
          nir_ssa_dest_init(&instr->instr, &instr->dest,
-                           ir->return_deref->type->vector_elements, NULL);
+                           ir->return_deref->type->vector_elements,
+                           bit_size, NULL);
          nir_builder_instr_insert(&b, &instr->instr);
          break;
       }
