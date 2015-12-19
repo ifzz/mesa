@@ -480,6 +480,21 @@ _is_resource_supported(struct gl_context *ctx, GLenum target,
    return true;
 }
 
+static bool
+_is_internalformat_supported(struct gl_context *ctx, GLenum target,
+                             GLenum internalformat)
+{
+   GLint buffer[1];
+
+   if (_mesa_base_tex_format(ctx, internalformat) < 0)
+      return false;
+
+   ctx->Driver.QueryInternalFormat(ctx, target, internalformat,
+                                   GL_INTERNALFORMAT_SUPPORTED, buffer);
+
+   return (buffer[0] == GL_TRUE);
+}
+
 /* default implementation of QueryInternalFormat driverfunc, for
  * drivers not implementing ARB_internalformat_query2.
  */
@@ -497,6 +512,11 @@ _mesa_query_internal_format_default(struct gl_context *ctx, GLenum target,
    case GL_NUM_SAMPLE_COUNTS:
       params[0] = 1;
       break;
+
+   case GL_INTERNALFORMAT_SUPPORTED:
+      params[0] = GL_TRUE;
+      break;
+
    default:
       _set_default_response(pname, params);
       break;
@@ -530,6 +550,7 @@ _mesa_GetInternalformativ(GLenum target, GLenum internalformat, GLenum pname,
    _set_default_response(pname, buffer);
 
    if (!_is_target_supported(ctx, target) ||
+       !_is_internalformat_supported(ctx, target, internalformat) ||
        !_is_resource_supported(ctx, target, internalformat, pname))
       goto end;
 
@@ -568,7 +589,10 @@ _mesa_GetInternalformativ(GLenum target, GLenum internalformat, GLenum pname,
                                       buffer);
       break;
    case GL_INTERNALFORMAT_SUPPORTED:
-      /* @TODO */
+      /* If we reach this point, the _is_internalformat_supported check was
+       * successful.
+       */
+      buffer[0] = GL_TRUE;
       break;
 
    case GL_INTERNALFORMAT_PREFERRED:
