@@ -531,6 +531,22 @@ _mesa_query_internal_format_default(struct gl_context *ctx, GLenum target,
       params[0] = GL_RGBA8UI;
       break;
 
+   case GL_TEXTURE_IMAGE_FORMAT:
+   case GL_GET_TEXTURE_IMAGE_FORMAT:
+      /* Return a generic preferred image format.
+       * That's better than no answer at all.
+       */
+      params[0] = GL_RGBA;
+      break;
+
+   case GL_TEXTURE_IMAGE_TYPE:
+   case GL_GET_TEXTURE_IMAGE_TYPE:
+      /* Return a generic preferred image format.
+       * That's better than no answer at all.
+       */
+      params[0] = GL_UNSIGNED_BYTE;
+      break;
+
    default:
       _set_default_response(pname, params);
       break;
@@ -953,19 +969,11 @@ _mesa_GetInternalformativ(GLenum target, GLenum internalformat, GLenum pname,
       break;
 
    case GL_TEXTURE_IMAGE_FORMAT:
-      /* @TODO */
-      break;
-
    case GL_TEXTURE_IMAGE_TYPE:
-      /* @TODO */
-      break;
-
    case GL_GET_TEXTURE_IMAGE_FORMAT:
-      /* @TODO */
-      break;
-
    case GL_GET_TEXTURE_IMAGE_TYPE:
-      /* @TODO */
+      ctx->Driver.QueryInternalFormat(ctx, target, internalformat, pname,
+                                      buffer);
       break;
 
    case GL_MIPMAP:
