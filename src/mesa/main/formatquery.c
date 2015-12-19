@@ -517,6 +517,11 @@ _mesa_query_internal_format_default(struct gl_context *ctx, GLenum target,
       params[0] = GL_TRUE;
       break;
 
+   case GL_INTERNALFORMAT_PREFERRED:
+      /* return a generic preferred internal format */
+      params[0] = GL_RGBA8UI;
+      break;
+
    default:
       _set_default_response(pname, params);
       break;
@@ -596,7 +601,8 @@ _mesa_GetInternalformativ(GLenum target, GLenum internalformat, GLenum pname,
       break;
 
    case GL_INTERNALFORMAT_PREFERRED:
-      /* @TODO */
+      ctx->Driver.QueryInternalFormat(ctx, target, internalformat, pname,
+                                      buffer);
       break;
 
    case GL_INTERNALFORMAT_RED_SIZE:
