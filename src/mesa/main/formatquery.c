@@ -385,6 +385,101 @@ _is_target_supported(struct gl_context *ctx, GLenum target)
    return true;
 }
 
+static bool
+_is_resource_supported(struct gl_context *ctx, GLenum target,
+                       GLenum internalformat, GLenum pname)
+{
+   /* From the ARB_internalformat_query2 spec:
+    *
+    * In the following descriptions, the term /resource/ is used to generically
+    * refer to an object of the appropriate type that has been created with
+    * <internalformat> and <target>.  If the particular <target> and
+    * <internalformat> combination do not make sense, ... the "unsupported"
+    * answer should be given. This is not an error.
+    */
+
+   /* Some pnames do not care if  the /resource/ is supported or not, they only
+    * care about the 'internalformat' support, which will be implemented in
+    * terms of the INTERNALFORMAT_SUPPORTED pname. We return 'true' for
+    * those.
+    */
+   switch (pname) {
+   case GL_INTERNALFORMAT_SUPPORTED:
+   case GL_INTERNALFORMAT_PREFERRED:
+   case GL_INTERNALFORMAT_RED_SIZE:
+   case GL_INTERNALFORMAT_GREEN_SIZE:
+   case GL_INTERNALFORMAT_BLUE_SIZE:
+   case GL_INTERNALFORMAT_ALPHA_SIZE:
+   case GL_INTERNALFORMAT_DEPTH_SIZE:
+   case GL_INTERNALFORMAT_STENCIL_SIZE:
+   case GL_INTERNALFORMAT_SHARED_SIZE:
+   case GL_INTERNALFORMAT_RED_TYPE:
+   case GL_INTERNALFORMAT_GREEN_TYPE:
+   case GL_INTERNALFORMAT_BLUE_TYPE:
+   case GL_INTERNALFORMAT_ALPHA_TYPE:
+   case GL_INTERNALFORMAT_DEPTH_TYPE:
+   case GL_INTERNALFORMAT_STENCIL_TYPE:
+   case GL_COLOR_COMPONENTS:
+   case GL_DEPTH_COMPONENTS:
+   case GL_STENCIL_COMPONENTS:
+   case GL_COLOR_RENDERABLE:
+   case GL_DEPTH_RENDERABLE:
+   case GL_STENCIL_RENDERABLE:
+      return true;
+   default:
+      break;
+   }
+
+   switch(target){
+   case GL_TEXTURE_1D:
+   case GL_TEXTURE_1D_ARRAY:
+   case GL_TEXTURE_2D:
+   case GL_TEXTURE_2D_ARRAY:
+   case GL_TEXTURE_3D:
+   case GL_TEXTURE_CUBE_MAP:
+   case GL_TEXTURE_CUBE_MAP_ARRAY:
+   case GL_TEXTURE_RECTANGLE:
+      /* Based on what is done in the "teximage" method  */
+      if (_mesa_base_tex_format(ctx, internalformat) < 0)
+         return false;
+
+      /* additional checks for depth textures */
+      if (!_mesa_legal_texture_base_format_for_target(ctx, target, internalformat))
+         return false;
+
+      /* additional checks for compressed textures */
+      if (_mesa_is_compressed_format(ctx, internalformat) &&
+          (!_mesa_target_can_be_compressed(ctx, target, internalformat, NULL) ||
+           _mesa_format_no_online_compression(ctx, internalformat)))
+         return false;
+
+      break;
+   case GL_TEXTURE_2D_MULTISAMPLE:
+   case GL_TEXTURE_2D_MULTISAMPLE_ARRAY:
+      /* Based on what it is done in "texture_image_multisample" method */
+      if (!_mesa_is_renderable_texture_format(ctx, internalformat))
+         return false;
+
+      break;
+   case GL_TEXTURE_BUFFER:
+      /* Based on what it is done in "_mesaTexBuffer" method */
+      if (_mesa_validate_texbuffer_format(ctx, internalformat) == MESA_FORMAT_NONE)
+         return false;
+
+      break;
+   case GL_RENDERBUFFER:
+      /* Based on what it is done in "renderbuffer_storage" method */
+      if (!_mesa_base_fbo_format(ctx, internalformat))
+         return false;
+
+      break;
+   default:
+      unreachable("bad target");
+   }
+
+   return true;
+}
+
 /* default implementation of QueryInternalFormat driverfunc, for
  * drivers not implementing ARB_internalformat_query2.
  */
@@ -434,7 +529,8 @@ _mesa_GetInternalformativ(GLenum target, GLenum internalformat, GLenum pname,
    /* The 'unsupported' response for each pname is the default answer */
    _set_default_response(pname, buffer);
 
-   if (!_is_target_supported(ctx, target))
+   if (!_is_target_supported(ctx, target) ||
+       !_is_resource_supported(ctx, target, internalformat, pname))
       goto end;
 
    switch (pname) {
