@@ -392,16 +392,37 @@ _is_target_supported(struct gl_context *ctx, GLenum target)
    switch(target){
    case GL_TEXTURE_2D:
    case GL_TEXTURE_3D:
+      break;
+
    case GL_TEXTURE_1D:
-   case GL_TEXTURE_1D_ARRAY:
-   case GL_TEXTURE_2D_ARRAY:
-   case GL_TEXTURE_CUBE_MAP:
-   case GL_TEXTURE_CUBE_MAP_ARRAY:
-   case GL_TEXTURE_RECTANGLE:
-      if (!(_mesa_legal_teximage_target(ctx, 1, target) ||
-            _mesa_legal_teximage_target(ctx, 2, target) ||
-            _mesa_legal_teximage_target(ctx, 3, target)))
+      if (!_mesa_is_desktop_gl(ctx))
          return false;
+      break;
+
+   case GL_TEXTURE_1D_ARRAY:
+      if (!(_mesa_is_desktop_gl(ctx) && ctx->Extensions.EXT_texture_array))
+         return false;
+      break;
+
+   case GL_TEXTURE_2D_ARRAY:
+      if (!((_mesa_is_desktop_gl(ctx) && ctx->Extensions.EXT_texture_array)
+            || _mesa_is_gles3(ctx)))
+         return false;
+      break;
+
+   case GL_TEXTURE_CUBE_MAP:
+      if (!ctx->Extensions.ARB_texture_cube_map)
+         return false;
+      break;
+
+   case GL_TEXTURE_CUBE_MAP_ARRAY:
+      if (!ctx->Extensions.ARB_texture_cube_map_array)
+         return false;
+      break;
+
+   case GL_TEXTURE_RECTANGLE:
+      if (!(_mesa_is_desktop_gl(ctx) && ctx->Extensions.NV_texture_rectangle))
+          return false;
       break;
 
    case GL_TEXTURE_BUFFER:
