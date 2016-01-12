@@ -1361,7 +1361,7 @@ _mesa_GetInternalformativ(GLenum target, GLenum internalformat, GLenum pname,
       if (!ctx->Extensions.ARB_shader_image_load_store)
          goto end;
 
-      if (!_mesa_legal_get_tex_level_parameter_target(ctx, target, false))
+      if (!_mesa_legal_get_tex_level_parameter_target(ctx, target, true))
          goto end;
 
       /* From spec: "Equivalent to calling GetTexParameter with <value> set
