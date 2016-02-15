@@ -417,24 +417,29 @@ lower_trunc(nir_builder *b, nir_ssa_def *source)
 }
 
 static nir_ssa_def *
-lower_floor(nir_builder *b, nir_ssa_def *src)
+lower_floor(nir_builder *b, nir_ssa_def *source)
 {
-   /*
-    * For x >= 0, floor(x) = trunc(x)
-    * For x < 0,
-    *    - if x is integer, floor(x) = x
-    *    - otherwise, floor(x) = trunc(x) - 1
-    */
-   nir_ssa_def *tr = nir_ftrunc(b, src);
-   return nir_bcsel(b,
-                    nir_fge(b, src, nir_imm_double(b, 0.0)),
-                    tr,
-                    nir_bcsel(b,
-                              nir_fne(b,
-                                      nir_fsub(b, src, tr),
-                                      nir_imm_double(b, 0.0f)),
-                              nir_fsub(b, tr, nir_imm_double(b, 1.0)),
-                              src));
+   nir_ssa_def *res[4];
+   for (int i = 0; i < source->num_components; i++) {
+      nir_ssa_def *src = nir_swizzle(b, source, (unsigned[]) {i}, 1, true);
+      /*
+       * For x >= 0, floor(x) = trunc(x)
+       * For x < 0,
+       *    - if x is integer, floor(x) = x
+       *    - otherwise, floor(x) = trunc(x) - 1
+       */
+      nir_ssa_def *tr = nir_ftrunc(b, src);
+      res[i] = nir_bcsel(b,
+                         nir_fge(b, src, nir_imm_double(b, 0.0)),
+                         tr,
+                         nir_bcsel(b,
+                                   nir_fne(b,
+                                           nir_fsub(b, src, tr),
+                                           nir_imm_double(b, 0.0f)),
+                                   nir_fsub(b, tr, nir_imm_double(b, 1.0)),
+                                   src));
+   }
+   return nir_vec(b, res, source->num_components);
 }
 
 static nir_ssa_def *
