@@ -438,25 +438,30 @@ lower_floor(nir_builder *b, nir_ssa_def *src)
 }
 
 static nir_ssa_def *
-lower_ceil(nir_builder *b, nir_ssa_def *src)
+lower_ceil(nir_builder *b, nir_ssa_def *source)
 {
-   /*
-    * If x < 0, ceil(x) = trunc(x)
-    * else
-    *    - if x is integer, ceil(x) = x
-    *    - otherwise, ceil(x) = trunc(x) + 1
-    */
-   nir_ssa_def *tr = nir_ftrunc(b, src);
-   nir_ssa_def *pos = nir_bcsel(b,
-                                nir_fne(b,
-                                        nir_fsub(b, src, tr),
-                                        nir_imm_double(b, 0.0f)),
-                                nir_fadd(b, tr, nir_imm_double(b, 1.0)),
-                                src);
-   return nir_bcsel(b,
-                    nir_flt(b, src, nir_imm_double(b, 0.0)),
-                    tr,
-                    pos);
+   nir_ssa_def *res[4];
+   for (int i = 0; i < source->num_components; i++) {
+      nir_ssa_def *src = nir_swizzle(b, source, (unsigned[]) {i}, 1, true);
+      /*
+       * If x < 0, ceil(x) = trunc(x)
+       * else
+       *    - if x is integer, ceil(x) = x
+       *    - otherwise, ceil(x) = trunc(x) + 1
+       */
+      nir_ssa_def *tr = nir_ftrunc(b, src);
+      nir_ssa_def *pos = nir_bcsel(b,
+                                   nir_fne(b,
+                                           nir_fsub(b, src, tr),
+                                           nir_imm_double(b, 0.0f)),
+                                   nir_fadd(b, tr, nir_imm_double(b, 1.0)),
+                                   src);
+      res[i] = nir_bcsel(b,
+                         nir_flt(b, src, nir_imm_double(b, 0.0)),
+                         tr,
+                         pos);
+   }
+   return nir_vec(b, res, source->num_components);
 }
 
 static nir_ssa_def *
