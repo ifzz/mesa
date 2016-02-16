@@ -342,6 +342,13 @@ try_copy_propagate(const struct brw_device_info *devinfo,
    if (is_vec4_align1(inst->opcode))
       return false;
 
+   /* Don't propagate double values to smaller data types, they could access
+    * to wrong values.
+    */
+   if (value.type == BRW_REGISTER_TYPE_DF &&
+       type_sz(inst->src[arg].type) < 8)
+      return false;
+
    unsigned composed_swizzle = brw_compose_swizzle(inst->src[arg].swizzle,
                                                    value.swizzle);
    if (inst->is_3src() &&
