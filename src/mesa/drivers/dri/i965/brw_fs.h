@@ -288,9 +288,9 @@ public:
 
    void emit_shader_time_begin();
    void emit_shader_time_end();
-   void SHADER_TIME_ADD(const brw::fs_builder &bld,
-                        int shader_time_subindex,
-                        fs_reg value);
+   void emit_shader_time_write(const brw::fs_builder &bld,
+                               int shader_time_subindex,
+                               fs_reg value);
 
    fs_reg get_timestamp(const brw::fs_builder &bld);
 

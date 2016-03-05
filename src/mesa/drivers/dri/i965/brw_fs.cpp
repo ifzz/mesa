@@ -613,17 +613,17 @@ fs_visitor::emit_shader_time_end()
     * trying to determine the time taken for single instructions.
     */
    cbld.ADD(diff, diff, brw_imm_ud(-2u));
-   SHADER_TIME_ADD(cbld, 0, diff);
-   SHADER_TIME_ADD(cbld, 1, brw_imm_ud(1u));
+   emit_shader_time_write(cbld, 0, diff);
+   emit_shader_time_write(cbld, 1, brw_imm_ud(1u));
    ibld.emit(BRW_OPCODE_ELSE);
-   SHADER_TIME_ADD(cbld, 2, brw_imm_ud(1u));
+   emit_shader_time_write(cbld, 2, brw_imm_ud(1u));
    ibld.emit(BRW_OPCODE_ENDIF);
 }
 
 void
-fs_visitor::SHADER_TIME_ADD(const fs_builder &bld,
-                            int shader_time_subindex,
-                            fs_reg value)
+fs_visitor::emit_shader_time_write(const fs_builder &bld,
+                                   int shader_time_subindex,
+                                   fs_reg value)
 {
    int index = shader_time_index * 3 + shader_time_subindex;
    struct brw_reg offset = brw_imm_d(index * SHADER_TIME_STRIDE);
