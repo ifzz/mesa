@@ -1815,9 +1815,10 @@ vec4_visitor::emit_shader_time_write(int shader_time_subindex, src_reg value)
    time.type = BRW_REGISTER_TYPE_UD;
    emit(MOV(time, value));
 
-   vec4_instruction *inst =
-      emit(SHADER_OPCODE_SHADER_TIME_ADD, dst_reg(), src_reg(dst));
-   inst->mlen = 2;
+   /* FIXME: to be replaced by emit_untyped_atomic */
+   // vec4_instruction *inst =
+   //    emit(SHADER_OPCODE_SHADER_TIME_ADD, dst_reg(), src_reg(dst));
+   // inst->mlen = 2;
 }
 
 void
