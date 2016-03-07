@@ -4426,6 +4426,10 @@ lower_surface_logical_send(const fs_builder &bld, fs_inst *inst, opcode op,
    inst->mlen = header_sz + (addr_sz + src_sz) * inst->exec_size / 8;
    inst->header_size = header_sz;
 
+   assert(payload.hstride == 0);
+   assert(surface.hstride == 0);
+   assert(arg.hstride == 0);
+
    inst->src[0] = payload;
    inst->src[1] = surface;
    inst->src[2] = arg;

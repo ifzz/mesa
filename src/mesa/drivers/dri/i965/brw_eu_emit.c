@@ -2937,6 +2937,8 @@ brw_untyped_atomic(struct brw_codegen *p,
                    unsigned msg_length,
                    bool response_expected)
 {
+   assert(payload.hstride == 0);
+
    const struct brw_device_info *devinfo = p->devinfo;
    const unsigned sfid = (devinfo->gen >= 8 || devinfo->is_haswell ?
                           HSW_SFID_DATAPORT_DATA_CACHE_1 :
@@ -2948,6 +2950,12 @@ brw_untyped_atomic(struct brw_codegen *p,
     * additional atomic operations on the addresses that happen to be in the
     * uninitialized Y, Z and W coordinates of the payload.
     */
+
+   /* FIXME: this would remove the hstride==0 assertion, but it is still not working. */
+   payload.hstride = BRW_HORIZONTAL_STRIDE_0;
+   payload.vstride = BRW_VERTICAL_STRIDE_0;
+   payload.width = BRW_WIDTH_1;
+
    const unsigned mask = align1 ? WRITEMASK_XYZW : WRITEMASK_X;
    struct brw_inst *insn = brw_send_indirect_surface_message(
       p, sfid, brw_writemask(dst, mask), payload, surface, msg_length,
