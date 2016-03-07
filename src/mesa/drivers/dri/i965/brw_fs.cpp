@@ -633,6 +633,11 @@ fs_visitor::emit_shader_time_write(const fs_builder &bld,
    const fs_reg surface = brw_imm_ud(surf_index);
    fs_reg aux = fs_reg();
 
+   fprintf(stdout, "[emit_shader_time_write]\n");
+   fprintf(stdout, "\tcomputing offset: shader_time_index=%i, shader_time_subindex=%i, final index=%i, offset=%i\n",
+           shader_time_index, shader_time_subindex, index, index * SHADER_TIME_STRIDE);
+   fprintf(stdout, "\tcomputing surface: surf_index = %i\n", surf_index);
+
    /* FIXME: I assume that it is not needed to move tmp to dst. That is would
     * be needed if there is any variable on the original shader needed the
     * value of the atomic, that is not the case here. As far as I understand,
