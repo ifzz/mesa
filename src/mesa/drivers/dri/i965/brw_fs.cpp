@@ -631,13 +631,26 @@ fs_visitor::emit_shader_time_write(const fs_builder &bld,
    fs_reg tmp;
    unsigned surf_index = prog_data->binding_table.shader_time_start;
    const fs_reg surface = brw_imm_ud(surf_index);
+   fs_reg aux = fs_reg();
 
    /* FIXME: I assume that it is not needed to move tmp to dst. That is would
     * be needed if there is any variable on the original shader needed the
-    * value of the atomic, that is not the case here. */
+    * value of the atomic, that is not the case here. As far as I understand,
+    * the time entries are collected directly from shader_time.bo */
 
-   /* FIXME: hstride error */
-   tmp = emit_untyped_atomic(bld, surface, offset, value, fs_reg(),
+   /* FIXME: hstride error, trying to set 0 to params. Note that brw_imm_d and
+    * brw_imm_ud is already setting hstride and vstride to 0 on surface and
+    * offset */
+
+   value.hstride = BRW_HORIZONTAL_STRIDE_0;
+   value.vstride = BRW_VERTICAL_STRIDE_0;
+   value.width = BRW_WIDTH_1;
+
+   aux.hstride = BRW_HORIZONTAL_STRIDE_0;
+   aux.vstride = BRW_VERTICAL_STRIDE_0;
+   aux.width = BRW_WIDTH_1;
+
+   tmp = emit_untyped_atomic(bld, surface, offset, value, aux,
                              1, 1, BRW_AOP_ADD);
 
    brw_mark_surface_used(prog_data,
