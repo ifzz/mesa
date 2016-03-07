@@ -40,8 +40,10 @@
 #include "brw_dead_control_flow.h"
 #include "compiler/glsl_types.h"
 #include "program/prog_parameter.h"
+#include "brw_fs_surface_builder.h"
 
 using namespace brw;
+using namespace brw::surface_access;
 
 void
 fs_inst::init(enum opcode opcode, uint8_t exec_size, const fs_reg &dst,
@@ -627,14 +629,20 @@ fs_visitor::emit_shader_time_write(const fs_builder &bld,
 {
    int index = shader_time_index * 3 + shader_time_subindex;
    struct brw_reg offset = brw_imm_d(index * SHADER_TIME_STRIDE);
+   fs_reg tmp;
+   unsigned surf_index = prog_data->binding_table.shader_time_start;
+   const fs_reg surface = brw_imm_ud(surf_index);
 
-   fs_reg payload;
-   if (dispatch_width == 8)
-      payload = vgrf(glsl_type::uvec2_type);
-   else
-      payload = vgrf(glsl_type::uint_type);
+   /* FIXME: I assume that it is not needed to move tmp to dst. That is would
+    * be needed if there is any variable on the original shader needed the
+    * value of the atomic, that is not the case here. */
 
-   bld.emit(SHADER_OPCODE_SHADER_TIME_ADD, fs_reg(), payload, offset, value);
+   /* FIXME: hstride error */
+   tmp = emit_untyped_atomic(bld, surface, offset, value, fs_reg(),
+                             1, 1, BRW_AOP_ADD);
+
+   brw_mark_surface_used(prog_data,
+                         prog_data->binding_table.shader_time_start);
 }
 
 void
