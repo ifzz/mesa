@@ -248,9 +248,6 @@ brw_instruction_name(const struct brw_device_info *devinfo, enum opcode op)
    case SHADER_OPCODE_SAMPLEINFO_LOGICAL:
       return "sampleinfo_logical";
 
-   case SHADER_OPCODE_SHADER_TIME_ADD:
-      return "shader_time_add";
-
    case SHADER_OPCODE_UNTYPED_ATOMIC:
       return "untyped_atomic";
    case SHADER_OPCODE_UNTYPED_ATOMIC_LOGICAL:

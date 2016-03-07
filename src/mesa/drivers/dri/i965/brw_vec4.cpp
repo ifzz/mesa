@@ -148,7 +148,6 @@ bool
 vec4_instruction::is_send_from_grf()
 {
    switch (opcode) {
-   case SHADER_OPCODE_SHADER_TIME_ADD:
    case VS_OPCODE_PULL_CONSTANT_LOAD_GEN7:
    case SHADER_OPCODE_UNTYPED_ATOMIC:
    case SHADER_OPCODE_UNTYPED_SURFACE_READ:
@@ -205,7 +204,6 @@ vec4_instruction::regs_read(unsigned arg) const
       return 0;
 
    switch (opcode) {
-   case SHADER_OPCODE_SHADER_TIME_ADD:
    case SHADER_OPCODE_UNTYPED_ATOMIC:
    case SHADER_OPCODE_UNTYPED_SURFACE_READ:
    case SHADER_OPCODE_UNTYPED_SURFACE_WRITE:
@@ -321,8 +319,6 @@ vec4_visitor::implied_mrf_writes(vec4_instruction *inst)
    case GS_OPCODE_FF_SYNC:
       return 1;
    case TCS_OPCODE_URB_WRITE:
-      return 0;
-   case SHADER_OPCODE_SHADER_TIME_ADD:
       return 0;
    case SHADER_OPCODE_TEX:
    case SHADER_OPCODE_TXL:
