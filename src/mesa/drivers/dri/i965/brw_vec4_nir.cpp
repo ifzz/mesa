@@ -360,12 +360,15 @@ vec4_visitor::get_indirect_offset(nir_intrinsic_instr *instr)
 void
 vec4_visitor::nir_emit_load_const(nir_load_const_instr *instr)
 {
-   dst_reg reg = dst_reg(VGRF, alloc.allocate(1));
+   dst_reg reg;
 
-   if (instr->def.bit_size == 64)
+   if (instr->def.bit_size == 64) {
+      reg = dst_reg(VGRF, alloc.allocate(2));
       reg.type = BRW_REGISTER_TYPE_DF;
-   else
+   } else {
+      reg = dst_reg(VGRF, alloc.allocate(1));
       reg.type = BRW_REGISTER_TYPE_D;
+   }
 
    unsigned remaining = brw_writemask_for_size(instr->def.num_components);
 
@@ -395,7 +398,7 @@ vec4_visitor::nir_emit_load_const(nir_load_const_instr *instr)
             reg.writemask |= 4;
          }
          reg.writemask |= (reg.writemask << 1);
-         emit(MOV(reg, brw_imm_df(instr->value.f64[i])));
+         emit(MOV(reg, setup_imm_df(instr->value.f64[i])));
       } else {
          emit(MOV(reg, brw_imm_d(instr->value.i32[i])));
       }
@@ -1605,9 +1608,9 @@ vec4_visitor::nir_emit_alu(nir_alu_instr *instr)
 
    case nir_op_d2b: {
       /* two-argument instructions can't take 64-bit immediates */
-      dst_reg zero = dst_reg(VGRF, alloc.allocate(1));
+      dst_reg zero = dst_reg(VGRF, alloc.allocate(2));
       zero.type = BRW_REGISTER_TYPE_DF;
-      emit(MOV(zero, brw_imm_df(0.0)));
+      emit(MOV(zero, setup_imm_df(0.0)));
 
       dst_reg tmp = dst_reg(VGRF, alloc.allocate(1));
       tmp.type = BRW_REGISTER_TYPE_DF;
@@ -1934,9 +1937,9 @@ vec4_visitor::nir_emit_alu(nir_alu_instr *instr)
              * operation and each double takes two 32-bit slots, we want
              * to reswizzle the channels in the condition to XXYY.
              */
-            dst_reg zero = dst_reg(VGRF, alloc.allocate(1));
+            dst_reg zero = dst_reg(VGRF, alloc.allocate(2));
             zero.type = BRW_REGISTER_TYPE_DF;
-            emit(MOV(zero, brw_imm_df(0.0)));
+            emit(MOV(zero, setup_imm_df(0.0)));
 
             dst_reg temp = dst_reg(VGRF, alloc.allocate(1));
             temp.type = BRW_REGISTER_TYPE_DF;
