@@ -625,6 +625,34 @@ fs_visitor::optimize_frontfacing_ternary(nir_alu_instr *instr,
    return true;
 }
 
+fs_reg
+fs_visitor::setup_imm_df(double v)
+{
+   assert(devinfo->gen >= 7);
+
+   if (devinfo->gen >= 8)
+      return brw_imm_df(v);
+
+   /* gen7 does not support DF immediates */
+   union {
+      double d;
+      struct {
+         uint32_t i1;
+         uint32_t i2;
+      };
+   } di;
+
+   di.d = v;
+
+   fs_reg tmp = vgrf(glsl_type::double_type);
+   bld.MOV(retype(tmp, BRW_REGISTER_TYPE_UD),
+           brw_imm_ud(di.i1));
+   bld.MOV(horiz_offset(retype(tmp, BRW_REGISTER_TYPE_UD), 1),
+           brw_imm_ud(di.i2));
+
+   return stride(tmp, 0);
+}
+
 void
 fs_visitor::nir_emit_alu(const fs_builder &bld, nir_alu_instr *instr)
 {
