@@ -39,10 +39,10 @@
 
 static const GLuint double_types[5] = {
    0,
-   BRW_SURFACEFORMAT_R64_FLOAT,
-   BRW_SURFACEFORMAT_R64G64_FLOAT,
-   BRW_SURFACEFORMAT_R64G64B64_FLOAT,
-   BRW_SURFACEFORMAT_R64G64B64A64_FLOAT
+   BRW_SURFACEFORMAT_R64_PASSTHRU,
+   BRW_SURFACEFORMAT_R64G64_PASSTHRU,
+   BRW_SURFACEFORMAT_R64G64B64_PASSTHRU,
+   BRW_SURFACEFORMAT_R64G64B64A64_PASSTHRU
 };
 
 static const GLuint float_types[5] = {
@@ -785,7 +785,8 @@ brw_emit_vertices(struct brw_context *brw)
       case 1: comp1 = BRW_VE1_COMPONENT_STORE_0;
       case 2: comp2 = BRW_VE1_COMPONENT_STORE_0;
       case 3: comp3 = input->glarray->Integer ? BRW_VE1_COMPONENT_STORE_1_INT
-                                              : BRW_VE1_COMPONENT_STORE_1_FLT;
+                                              : (input->glarray->Doubles ? BRW_VE1_COMPONENT_STORE_0
+						                        : BRW_VE1_COMPONENT_STORE_1_FLT);
 	 break;
       }
 

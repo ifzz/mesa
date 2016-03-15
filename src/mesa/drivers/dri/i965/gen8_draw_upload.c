@@ -213,10 +213,24 @@ gen8_emit_vertices(struct brw_context *brw)
       case 1: comp1 = BRW_VE1_COMPONENT_STORE_0;
       case 2: comp2 = BRW_VE1_COMPONENT_STORE_0;
       case 3: comp3 = input->glarray->Integer ? BRW_VE1_COMPONENT_STORE_1_INT
-                                              : BRW_VE1_COMPONENT_STORE_1_FLT;
+	                                      : (input->glarray->Doubles ? BRW_VE1_COMPONENT_STORE_0
+			                      : BRW_VE1_COMPONENT_STORE_1_FLT);
+
          break;
       }
 
+      if (input->glarray->Doubles) {
+         if (input->glarray->Size == 1) {
+            comp1 = BRW_VE1_COMPONENT_STORE_0;
+            comp2 = comp3 = BRW_VE1_COMPONENT_NOSTORE;
+         }
+         if (input->glarray->Size == 2) {
+            comp2 = comp3 = BRW_VE1_COMPONENT_NOSTORE;
+         }
+         if (input->glarray->Size == 3) {
+            comp3 = BRW_VE1_COMPONENT_STORE_0;
+         }
+      }
       OUT_BATCH((input->buffer << GEN6_VE0_INDEX_SHIFT) |
                 GEN6_VE0_VALID |
                 (format << BRW_VE0_FORMAT_SHIFT) |
