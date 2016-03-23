@@ -542,7 +542,8 @@ get_ssa_def_for_block(struct deref_node *node, nir_block *block,
     */
    nir_ssa_undef_instr *undef =
       nir_ssa_undef_instr_create(state->shader,
-                                 glsl_get_vector_elements(node->type));
+                                 glsl_get_vector_elements(node->type),
+                                 glsl_get_bit_size(glsl_get_base_type(node->type)));
    nir_instr_insert_before_cf_list(&state->impl->body, &undef->instr);
    def_stack_push(node, &undef->def, state);
    return &undef->def;
@@ -626,7 +627,8 @@ rename_variables_block(nir_block *block, struct lower_variables_state *state)
                 */
                nir_ssa_undef_instr *undef =
                   nir_ssa_undef_instr_create(state->shader,
-                                             intrin->num_components);
+                                             intrin->num_components,
+                                             intrin->dest.ssa.bit_size);
 
                nir_instr_insert_before(&intrin->instr, &undef->instr);
                nir_instr_remove(&intrin->instr);
