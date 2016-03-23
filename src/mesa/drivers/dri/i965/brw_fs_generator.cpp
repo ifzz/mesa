@@ -58,6 +58,40 @@ brw_reg_from_fs_reg(fs_inst *inst, fs_reg *reg, unsigned gen)
 {
    struct brw_reg brw_reg;
 
+   if (reg->nr == 6) {
+      if (reg->type == BRW_REGISTER_TYPE_D && reg->stride == 1)
+         reg->stride = 2;
+      if (reg->stride == 0) {
+         brw_reg = brw_vec1_reg(brw_file_from_reg(reg), reg->nr, 0);
+      } else if (inst->exec_size * reg->stride * type_sz(reg->type) <= 32) {
+         brw_reg = brw_vecn_reg(inst->exec_size, brw_file_from_reg(reg),
+                                reg->nr, 0);
+         brw_reg = stride(brw_reg, inst->exec_size * reg->stride,
+                          inst->exec_size, reg->stride);
+      } else {
+         /* From the Haswell PRM:
+          *
+          * VertStride must be used to cross GRF register boundaries. This
+          * rule implies that elements within a 'Width' cannot cross GRF
+          * boundaries.
+          *
+          * So, for registers that are large enough, we have to split the exec
+          * size in two and trust the compression state to sort it out.
+          */
+         assert(inst->exec_size / 2 * reg->stride * type_sz(reg->type) <= 32);
+         brw_reg = brw_vecn_reg(inst->exec_size / 2, brw_file_from_reg(reg),
+                                reg->nr, 0);
+         brw_reg = stride(brw_reg, inst->exec_size / 2 * reg->stride,
+                          inst->exec_size / 2, reg->stride);
+      }
+
+      brw_reg = retype(brw_reg, reg->type);
+      brw_reg = byte_offset(brw_reg, reg->subreg_offset);
+      brw_reg.abs = reg->abs;
+      brw_reg.negate = reg->negate;
+      return brw_reg;
+   }
+
    switch (reg->file) {
    case MRF:
       assert((reg->nr & ~BRW_MRF_COMPR4) < BRW_MAX_MRF(gen));
