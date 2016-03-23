@@ -465,7 +465,8 @@ construct_value(const nir_search_value *value,
 
    case nir_search_value_constant: {
       const nir_search_constant *c = nir_search_value_as_constant(value);
-      nir_load_const_instr *load = nir_load_const_instr_create(mem_ctx, 1);
+      nir_load_const_instr *load =
+         nir_load_const_instr_create(mem_ctx, 1, bitsize->dest_size);
 
       switch (c->type) {
       case nir_type_float:
@@ -515,8 +516,6 @@ construct_value(const nir_search_value *value,
       default:
          unreachable("Invalid alu source type");
       }
-
-      load->def.bit_size = bitsize->dest_size;
 
       nir_instr_insert_before(instr, &load->instr);
 
