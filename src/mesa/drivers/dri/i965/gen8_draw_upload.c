@@ -235,18 +235,12 @@ gen8_emit_vertices(struct brw_context *brw)
        * this case, vertex elements must be written as 128 or 256 bits, with
        * VFCOMP_STORE_0 being used to pad the output as required."
        */
+      uint s = input->glarray->Size;
       if (input->glarray->Doubles) {
-         switch (input->glarray->Size) {
-         case 0: comp0 = BRW_VE1_COMPONENT_STORE_0;
-         case 1: comp1 = BRW_VE1_COMPONENT_STORE_0;
-         case 2:
-            comp2 = BRW_VE1_COMPONENT_NOSTORE;
-            comp3 = BRW_VE1_COMPONENT_NOSTORE;
-            break;
-         case 3: comp3 = BRW_VE1_COMPONENT_STORE_0;
-         }
-      } else {
-         switch (input->glarray->Size) {
+         s = s*2;
+      }
+
+         switch (s) {
          case 0: comp0 = BRW_VE1_COMPONENT_STORE_0;
          case 1: comp1 = BRW_VE1_COMPONENT_STORE_0;
          case 2: comp2 = BRW_VE1_COMPONENT_STORE_0;
@@ -255,7 +249,6 @@ gen8_emit_vertices(struct brw_context *brw)
                BRW_VE1_COMPONENT_STORE_1_INT:
                BRW_VE1_COMPONENT_STORE_1_FLT;
          }
-      }
 
       OUT_BATCH((input->buffer << GEN6_VE0_INDEX_SHIFT) |
                 GEN6_VE0_VALID |

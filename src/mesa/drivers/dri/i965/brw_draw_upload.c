@@ -233,9 +233,8 @@ double_types(struct brw_context *brw,
     * Formats Supported in VF Unit"
     * Previous PRMs doesn't include those references.
     */
-   return (brw->gen >= 8 && doubles
-           ? double_types_passthru[size]
-           : double_types_float[size]);
+   assert (size <= 2);
+   return float_types[size*2];
 }
 
 /**
