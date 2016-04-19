@@ -1332,8 +1332,11 @@ generate_pull_constant_load_gen7(struct brw_codegen *p,
    assert(surf_index.type == BRW_REGISTER_TYPE_UD);
 
    if (surf_index.file == BRW_IMMEDIATE_VALUE) {
+      brw_push_insn_state(p);
+      brw_set_default_exec_size(p, BRW_EXECUTE_8);
 
       brw_inst *insn = brw_next_insn(p, BRW_OPCODE_SEND);
+
       brw_set_dest(p, insn, dst);
       brw_set_src0(p, insn, offset);
       brw_set_sampler_message(p, insn,
@@ -1345,7 +1348,7 @@ generate_pull_constant_load_gen7(struct brw_codegen *p,
                               inst->header_size != 0,
                               BRW_SAMPLER_SIMD_MODE_SIMD4X2,
                               0);
-
+      brw_pop_insn_state(p);
       brw_mark_surface_used(&prog_data->base, surf_index.ud);
 
    } else {
@@ -1355,6 +1358,7 @@ generate_pull_constant_load_gen7(struct brw_codegen *p,
       brw_push_insn_state(p);
       brw_set_default_mask_control(p, BRW_MASK_DISABLE);
       brw_set_default_access_mode(p, BRW_ALIGN_1);
+      brw_set_default_exec_size(p, BRW_EXECUTE_8);
 
       /* a0.0 = surf_index & 0xff */
       brw_inst *insn_and = brw_next_insn(p, BRW_OPCODE_AND);
