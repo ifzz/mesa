@@ -810,6 +810,11 @@ vec4_visitor::nir_emit_intrinsic(nir_intrinsic_instr *instr)
 
          emit(SHADER_OPCODE_MOV_INDIRECT, dest, src,
               indirect, brw_imm_ud(instr->const_index[1]));
+         if (instr->num_components > 2 && nir_dest_bit_size(instr->dest) == 64) {
+            emit(ADD(dst_reg(indirect), indirect, brw_imm_ud(16)));
+            emit(SHADER_OPCODE_MOV_INDIRECT, offset(dest, 1), src,
+               indirect, brw_imm_ud(instr->const_index[1]));
+         }
       }
       break;
    }
