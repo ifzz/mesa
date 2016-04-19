@@ -2954,7 +2954,7 @@ fs_visitor::nir_emit_intrinsic(const fs_builder &bld, nir_intrinsic_instr *instr
           */
          assert(instr->const_index[1] >= instr->num_components * 4);
          unsigned read_size = instr->const_index[1] -
-                              (instr->num_components - 1) * 4;
+            (instr->num_components - 1) * type_sz(dest.type);
 
          for (unsigned j = 0; j < instr->num_components; j++) {
             bld.emit(SHADER_OPCODE_MOV_INDIRECT,
