@@ -2952,7 +2952,7 @@ fs_visitor::nir_emit_intrinsic(const fs_builder &bld, nir_intrinsic_instr *instr
           * component from running past, we subtract off the size of all but
           * one component of the vector.
           */
-         assert(instr->const_index[1] >= instr->num_components * (int) type_sz(dest.type));
+         assert(instr->const_index[1] >= instr->num_components * 4);
          unsigned read_size = instr->const_index[1] -
             (instr->num_components - 1) * type_sz(dest.type);
 
