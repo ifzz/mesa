@@ -2957,9 +2957,11 @@ fs_visitor::nir_emit_intrinsic(const fs_builder &bld, nir_intrinsic_instr *instr
             (instr->num_components - 1) * type_sz(dest.type);
 
          for (unsigned j = 0; j < instr->num_components; j++) {
-            bld.emit(SHADER_OPCODE_MOV_INDIRECT,
-                     offset(dest, bld, j), offset(src, bld, j),
-                     indirect, brw_imm_ud(read_size));
+            fs_inst *inst = bld.emit(SHADER_OPCODE_MOV_INDIRECT,
+                                     offset(dest, bld, j), offset(src, bld, j),
+                                     indirect, brw_imm_ud(read_size));
+            if (type_sz(dest.type) == 8)
+               inst->exec_size = 8;
          }
       }
       break;
