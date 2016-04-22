@@ -347,12 +347,20 @@ vec4_visitor::get_nir_src(nir_src src, unsigned num_components)
 static unsigned
 brw_swizzle_for_nir_swizzle(uint8_t swizzle[4], unsigned bit_size)
 {
+   if (bit_size == 64)
+      return BRW_SWIZZLE4(swizzle[0] * 2, swizzle[0] * 2 + 1,
+                          swizzle[1] * 2, swizzle[1] * 2 + 1);
+
    return BRW_SWIZZLE4(swizzle[0], swizzle[1], swizzle[2], swizzle[3]);
 }
 
 static unsigned
 brw_writemask_for_nir_writemask(unsigned writemask, unsigned bit_size)
 {
+   if (bit_size == 64) {
+      assert(writemask <= 3);
+      return ((writemask & 1) * 3) + ((writemask & 2) * 6);
+   }
    return writemask;
 }
 
