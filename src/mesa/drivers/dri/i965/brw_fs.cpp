@@ -1857,6 +1857,12 @@ fs_visitor::convert_attr_sources_to_hw_regs(fs_inst *inst)
                    inst->src[i].nr +
                    inst->src[i].reg_offset;
 
+         if (grf >= 128) {
+            fail("Failure to register allocate.  Reduce number of "
+                 "vertex input attributes to avoid this.");
+            return;
+         }
+
          unsigned width;
          unsigned real_exec_size;
 
