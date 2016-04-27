@@ -2128,7 +2128,6 @@ brw_compile_vs(const struct brw_compiler *compiler, void *log_data,
    }
 
    GLbitfield64 processed_attributes = 0;
-
    foreach_list_typed(nir_variable, var, node, &shader->inputs) {
       /* Only interested in values not already processed */
       if (processed_attributes & BITFIELD64_BIT(var->data.location))
@@ -2137,6 +2136,7 @@ brw_compile_vs(const struct brw_compiler *compiler, void *log_data,
       nr_attribute_slots += glsl_count_attribute_slots(var->type, false);
       processed_attributes |= BITFIELD64_BIT(var->data.location);
    }
+
    /* The 3DSTATE_VS documentation lists the lower bound on "Vertex URB Entry
     * Read Length" as 1 in vec4 mode, and 0 in SIMD8 mode.  Empirically, in
     * vec4 mode, the hardware appears to wedge unless we read something.
