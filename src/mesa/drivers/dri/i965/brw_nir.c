@@ -217,9 +217,9 @@ brw_nir_lower_vs_inputs(nir_shader *nir,
       var->data.driver_location = var->data.location;
    }
 
-   /* Now use nir_lower_io to walk dereference chains.  Attribute arrays
-    * are loaded as one vec4/dvec4 per element (or matrix column), depending if
-    * it is a double-precision type or not
+   /* Now use nir_lower_io to walk dereference chains.  Attribute arrays are
+    * loaded as one vec4 or dvec4 per element (or matrix column), depending on
+    * whether it is a double-precision type or not.
     */
    nir_lower_io(nir, nir_var_shader_in, type_size_vs_input);
 
