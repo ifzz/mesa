@@ -3175,7 +3175,7 @@ fs_visitor::nir_emit_intrinsic(const fs_builder &bld, nir_intrinsic_instr *instr
       }
       if (type_sz(src.type) == 8)
          SHUFFLE_32BIT_LOAD_RESULT_TO_64BIT_DATA(bld,
-                                                 offset(dest,bld, 0),
+                                                 offset(dest, bld, 0),
                                                  offset(dest, bld, 0),
                                                  instr->num_components);
 
