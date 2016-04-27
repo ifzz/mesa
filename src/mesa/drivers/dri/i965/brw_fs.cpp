@@ -1864,7 +1864,7 @@ fs_visitor::convert_attr_sources_to_hw_regs(fs_inst *inst)
          }
 
          unsigned width;
-         unsigned real_exec_size;
+         unsigned exec_size;
 
          /* As explained at brw_reg_from_fs_reg, From the Haswell PRM:
           *
@@ -1879,17 +1879,17 @@ fs_visitor::convert_attr_sources_to_hw_regs(fs_inst *inst)
                                inst->src[i].stride *
                                type_sz(inst->src[i].type);
          if (total_size <= 32) {
-            real_exec_size = inst->exec_size;
+            exec_size = inst->exec_size;
          } else {
             assert(total_size / 2 <= 32);
-            real_exec_size = inst->exec_size / 2;
+            exec_size = inst->exec_size / 2;
          }
-         width = inst->src[i].stride == 0 ? 1 : real_exec_size;
+         width = inst->src[i].stride == 0 ? 1 : exec_size;
 
          struct brw_reg reg =
             stride(byte_offset(retype(brw_vec8_grf(grf, 0), inst->src[i].type),
                                inst->src[i].subreg_offset),
-                   real_exec_size * inst->src[i].stride,
+                   exec_size * inst->src[i].stride,
                    width, inst->src[i].stride);
          reg.abs = inst->src[i].abs;
          reg.negate = inst->src[i].negate;
