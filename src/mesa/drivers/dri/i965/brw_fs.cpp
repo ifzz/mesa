@@ -1875,10 +1875,13 @@ fs_visitor::convert_attr_sources_to_hw_regs(fs_inst *inst)
           * So, for registers that are large enough, we have to split the exec
           * size in two and trust the compression state to sort it out.
           */
-         if (inst->exec_size * inst->src[i].stride * type_sz(inst->src[i].type) <= 32) {
+         unsigned total_size = inst->exec_size *
+                               inst->src[i].stride *
+                               type_sz(inst->src[i].type);
+         if (total_size <= 32) {
             real_exec_size = inst->exec_size;
          } else {
-            assert(inst->exec_size / 2 * inst->src[i].stride * type_sz(inst->src[i].type) <= 32);
+            assert(total_size / 2 <= 32);
             real_exec_size = inst->exec_size / 2;
          }
          width = inst->src[i].stride == 0 ? 1 : real_exec_size;
