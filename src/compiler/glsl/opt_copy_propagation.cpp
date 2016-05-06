@@ -193,6 +193,24 @@ ir_copy_propagation_visitor::visit_enter(ir_call *ir)
       if (sig_param->data.mode != ir_var_function_out
           && sig_param->data.mode != ir_var_function_inout) {
          ir->accept(this);
+      } else {
+         /* Peeling of all array dereferences / swizzles */
+         ir_dereference_array *ir_array;
+         ir_swizzle *ir_swizzle;
+         do {
+            ir_array = ir->as_dereference_array();
+            if (ir_array) {
+               ir_array->array_index->accept(this);
+               ir = ir_array->array;
+               continue;
+            }
+            ir_swizzle = ir->as_swizzle();
+            if (ir_swizzle) {
+               ir = ir_swizzle->val;
+               continue;
+            }
+            ir = NULL;
+         } while (ir);
       }
    }
 
