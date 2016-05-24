@@ -1914,9 +1914,16 @@ generate_code(struct brw_codegen *p,
          assert(type_sz(dst.type) == 4);
 
          brw_set_default_access_mode(p, BRW_ALIGN_1);
+
          dst.hstride = BRW_HORIZONTAL_STRIDE_2;
          dst.width = BRW_WIDTH_4;
          brw_MOV(p, dst, src[0]);
+
+         struct brw_reg dst_as_src = dst;
+         dst.hstride = BRW_HORIZONTAL_STRIDE_1;
+         dst.width = BRW_WIDTH_8;
+         brw_MOV(p, dst, dst_as_src);
+
          brw_set_default_access_mode(p, BRW_ALIGN_16);
          break;
       }
