@@ -1526,6 +1526,8 @@ generate_code(struct brw_codegen *p,
          }
          brw_set_default_exec_size(p, BRW_EXECUTE_4);
          fix_exec_size = true;
+      } else if (inst->exec_size) {
+         brw_set_default_exec_size(p, cvt(inst->exec_size) - 1);
       }
 
       switch (inst->opcode) {
@@ -2095,7 +2097,7 @@ generate_code(struct brw_codegen *p,
          unreachable("Unsupported opcode");
       }
 
-      if (fix_exec_size)
+      if (fix_exec_size || inst->exec_size)
          brw_set_default_exec_size(p, BRW_EXECUTE_8);
 
       if (inst->opcode == VEC4_OPCODE_PACK_BYTES) {
