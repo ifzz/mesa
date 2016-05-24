@@ -1941,6 +1941,65 @@ vec4_visitor::convert_to_hw_regs()
 }
 
 bool
+vec4_visitor::scalarize_df()
+{
+   bool progress = false;
+
+   foreach_block_and_inst_safe(block, vec4_instruction, inst, cfg) {
+      /* Skip DF instructions that operatein Align1 mode */
+      if (inst->opcode == VEC4_OPCODE_DOUBLE_TO_SINGLE ||
+          inst->opcode == VEC4_OPCODE_SINGLE_TO_DOUBLE ||
+          inst->opcode == VEC4_OPCODE_PICK_LOW_32BIT)
+         continue;
+
+      /* Check if this is a double-precision instruction */
+      bool is_double = false;
+      for (int arg = 0; arg < 3; arg++) {
+         if (inst->src[arg].file == BAD_FILE)
+            continue;
+
+         if (type_sz(inst->src[arg].type) < 8)
+            continue;
+
+         is_double = true;
+      }
+
+      if (!is_double)
+         continue;
+
+      /* Generate scalar instructions for each enabled channel  */
+      for (unsigned chan = 0; chan < 4; chan++) {
+         unsigned chan_mask = 1 << chan;
+         if (!(inst->dst.writemask & chan_mask))
+            continue;
+
+         src_reg srcs[3];
+         for (unsigned i = 0; i < 3; i++) {
+            unsigned swz = BRW_GET_SWZ(inst->src[i].swizzle, chan);
+            srcs[i] = inst->src[i];
+            srcs[i].swizzle = BRW_SWIZZLE4(swz, swz, swz, swz);
+         }
+
+         dst_reg dst = inst->dst;
+         dst.writemask = chan_mask;
+
+         vec4_instruction *scalar_inst = new(mem_ctx)
+            vec4_instruction(inst->opcode, dst, srcs[0], srcs[1], srcs[2]);
+         scalar_inst->regs_written = inst->regs_written;
+         scalar_inst->exec_size = inst->exec_size;
+         scalar_inst->force_writemask_all = inst->force_writemask_all;
+         scalar_inst->conditional_mod = inst->conditional_mod;
+         inst->insert_before(block, scalar_inst);
+      }
+
+      inst->remove(block);
+      progress = true;
+   }
+
+   return progress;
+}
+
+bool
 vec4_visitor::run()
 {
    if (shader_time_index >= 0)
@@ -2033,6 +2092,8 @@ vec4_visitor::run()
 
    if (failed)
       return false;
+
+   OPT(scalarize_df);
 
    setup_payload();
 

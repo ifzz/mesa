@@ -160,6 +160,8 @@ public:
    void opt_schedule_instructions();
    void convert_to_hw_regs();
 
+   bool scalarize_df();
+
    vec4_instruction *emit(vec4_instruction *inst);
 
    vec4_instruction *emit(enum opcode opcode);
