@@ -2000,6 +2000,38 @@ vec4_visitor::scalarize_df()
 }
 
 bool
+vec4_visitor::expand_64bit_swizzle_to_32bit()
+{
+   bool progress = false;
+
+   foreach_block_and_inst_safe(block, vec4_instruction, inst, cfg) {
+      /* Skip DF instructions that operatein Align1 mode */
+      if (inst->opcode == VEC4_OPCODE_DOUBLE_TO_SINGLE ||
+          inst->opcode == VEC4_OPCODE_SINGLE_TO_DOUBLE ||
+          inst->opcode == VEC4_OPCODE_PICK_LOW_32BIT)
+         continue;
+
+      for (int arg = 0; arg < 3; arg++) {
+         if (inst->src[arg].file == BAD_FILE)
+            continue;
+
+         if (type_sz(inst->src[arg].type) < 8)
+            continue;
+
+         /* This pass assumes that we have scalarized all DF instructions */
+         assert(brw_is_single_value_swizzle(inst->src[arg].swizzle));
+
+         unsigned swizzle = BRW_GET_SWZ(inst->src[arg].swizzle, 0);
+         inst->src[arg].swizzle = BRW_SWIZZLE4(swizzle * 2, swizzle * 2 + 1,
+                                               swizzle * 2, swizzle * 2 + 1);
+         progress = true;
+      }
+   }
+
+   return progress;
+}
+
+bool
 vec4_visitor::run()
 {
    if (shader_time_index >= 0)
@@ -2094,6 +2126,7 @@ vec4_visitor::run()
       return false;
 
    OPT(scalarize_df);
+   OPT(expand_64bit_swizzle_to_32bit);
 
    setup_payload();
 

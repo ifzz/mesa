@@ -161,6 +161,7 @@ public:
    void convert_to_hw_regs();
 
    bool scalarize_df();
+   bool expand_64bit_swizzle_to_32bit();
 
    vec4_instruction *emit(vec4_instruction *inst);
 
