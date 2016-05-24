@@ -1091,21 +1091,22 @@ vec4_visitor::emit_double_to_single(dst_reg dst, src_reg src, bool saturate,
     * source is immediate.
     */
    if (single_type == BRW_REGISTER_TYPE_F && src.file == BRW_IMMEDIATE_VALUE) {
-      dst_reg fixed_src = dst_reg(VGRF, alloc.allocate(1));
+      dst_reg fixed_src = dst_reg(VGRF, alloc.allocate(2));
       fixed_src.type = BRW_REGISTER_TYPE_DF;
       emit(MOV(fixed_src, src));
       src = src_reg(fixed_src);
    }
 
-   dst_reg temp = dst_reg(VGRF, alloc.allocate(1));
+   dst_reg temp = dst_reg(VGRF, alloc.allocate(2));
    temp.type = BRW_REGISTER_TYPE_DF;
    emit(MOV(temp, src));
-   src_reg temp_src = src_reg(temp);
-   dst_reg temp2 = dst_reg(VGRF, alloc.allocate(1));
+
+   dst_reg temp2 = dst_reg(VGRF, alloc.allocate(2));
    temp2.type = single_type;
-   emit(VEC4_OPCODE_DOUBLE_TO_SINGLE, temp2, temp_src);
+   emit(VEC4_OPCODE_DOUBLE_TO_SINGLE, temp2, src_reg(temp));
+
    src_reg temp2_src = src_reg(temp2);
-   temp2_src.swizzle = BRW_SWIZZLE_XZXZ;
+   temp2_src.swizzle = BRW_SWIZZLE_XYZW;
    vec4_instruction *inst = emit(MOV(dst, temp2_src));
    inst->saturate = saturate;
 }
