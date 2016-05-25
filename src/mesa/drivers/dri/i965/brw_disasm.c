@@ -745,7 +745,7 @@ dest(FILE *file, const struct brw_device_info *devinfo, brw_inst *inst)
          if (err == -1)
             return 0;
          if (brw_inst_dst_da16_subreg_nr(devinfo, inst))
-            format(file, ".%ld", brw_inst_dst_da16_subreg_nr(devinfo, inst) /
+            format(file, ".%ld", 16 * brw_inst_dst_da16_subreg_nr(devinfo, inst) /
                    reg_type_size[brw_inst_dst_reg_type(devinfo, inst)]);
          string(file, "<1>");
          err |= control(file, "writemask", writemask,
