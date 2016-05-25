@@ -1851,12 +1851,25 @@ vec4_visitor::convert_to_hw_regs()
             unsigned width = REG_SIZE / MAX2(4, type_size);
             reg = brw_vecn_grf(width, src.nr + src.reg_offset, 0);
             reg.type = src.type;
+            reg.subnr = src.subnr * type_size;
             reg.swizzle = src.swizzle;
             reg.abs = src.abs;
             reg.negate = src.negate;
             /* With DF instructions we use <2,2,1> regioning */
             if (type_size == 8) {
-               reg.vstride = BRW_VERTICAL_STRIDE_2;
+               /* We use subnr to select components ZW. To do that effectively,
+                * we need a vertical stride of 0, which exploits a hardware
+                * bug during instruction decompression that allows us to select
+                * the second half of a dvec4 for both vertices in a SIMD4x2
+                * execution.
+                *
+                * FIXME: this needs a longer explanation.
+                */
+               if (src.subnr > 0) {
+                  reg.vstride = BRW_VERTICAL_STRIDE_0;
+               } else {
+                  reg.vstride = BRW_VERTICAL_STRIDE_2;
+               }
             }
             break;
          }
@@ -2026,7 +2039,21 @@ vec4_visitor::expand_64bit_swizzle_to_32bit()
          /* This pass assumes that we have scalarized all DF instructions */
          assert(brw_is_single_value_swizzle(inst->src[arg].swizzle));
 
+         /* To gain access to Z/W components we need to use subnr to select
+          * the second half of the DF regiter and then use a X/Y swizzle to
+          * select Z/W respetively.
+          */
          unsigned swizzle = BRW_GET_SWZ(inst->src[arg].swizzle, 0);
+         if (swizzle >= 2) {
+            /* Uniforms work in units of a vec4, so to select the second
+             * half of a dvec3/4 uniform, increase reg_offset by one.
+             */
+            if (inst->src[arg].file != UNIFORM)
+               inst->src[arg].subnr = 2;
+            else
+               inst->src[arg].reg_offset += 1;
+            swizzle -= 2;
+         }
          inst->src[arg].swizzle = BRW_SWIZZLE4(swizzle * 2, swizzle * 2 + 1,
                                                swizzle * 2, swizzle * 2 + 1);
          progress = true;
