@@ -1847,12 +1847,17 @@ vec4_visitor::convert_to_hw_regs()
          struct brw_reg reg;
          switch (src.file) {
          case VGRF: {
-            unsigned width = REG_SIZE / MAX2(4, type_sz(src.type));
+            unsigned type_size = type_sz(src.type);
+            unsigned width = REG_SIZE / MAX2(4, type_size);
             reg = brw_vecn_grf(width, src.nr + src.reg_offset, 0);
             reg.type = src.type;
             reg.swizzle = src.swizzle;
             reg.abs = src.abs;
             reg.negate = src.negate;
+            /* With DF instructions we use <2,2,1> regioning */
+            if (type_size == 8) {
+               reg.vstride = BRW_VERTICAL_STRIDE_2;
+            }
             break;
          }
 
