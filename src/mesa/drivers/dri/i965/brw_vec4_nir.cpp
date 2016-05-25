@@ -1175,14 +1175,18 @@ vec4_visitor::nir_emit_alu(nir_alu_instr *instr)
 {
    vec4_instruction *inst;
 
-   dst_reg dst = get_nir_dest(instr->dest.dest,
-                              nir_op_infos[instr->op].output_type);
+   nir_alu_type dst_type = nir_op_infos[instr->op].output_type;
+   unsigned dst_bit_size = nir_dest_bit_size(instr->dest.dest);
+   dst_type = (nir_alu_type) (dst_type | dst_bit_size);
+   dst_reg dst = get_nir_dest(instr->dest.dest, dst_type);
    dst.writemask = instr->dest.write_mask;
 
    src_reg op[4];
    for (unsigned i = 0; i < nir_op_infos[instr->op].num_inputs; i++) {
-      op[i] = get_nir_src(instr->src[i].src,
-                          nir_op_infos[instr->op].input_types[i], 4);
+      nir_alu_type src_type = nir_op_infos[instr->op].input_types[i];
+      unsigned bit_size = nir_src_bit_size(instr->src[i].src);
+      src_type = (nir_alu_type) (src_type | bit_size);
+      op[i] = get_nir_src(instr->src[i].src, src_type, 4);
       op[i].swizzle = brw_swizzle_for_nir_swizzle(instr->src[i].swizzle);
       op[i].abs = instr->src[i].abs;
       op[i].negate = instr->src[i].negate;
