@@ -1484,7 +1484,7 @@ vec4_visitor::dump_instruction(backend_instruction *be_inst, FILE *file)
          fprintf(file, "|");
       switch (inst->src[i].file) {
       case VGRF:
-         fprintf(file, "vgrf%d", inst->src[i].nr);
+         fprintf(file, "vgrf%d.%d", inst->src[i].nr, inst->src[i].subnr);
          break;
       case FIXED_GRF:
          fprintf(file, "g%d", inst->src[i].nr);
@@ -1493,7 +1493,7 @@ vec4_visitor::dump_instruction(backend_instruction *be_inst, FILE *file)
          fprintf(file, "attr%d", inst->src[i].nr);
          break;
       case UNIFORM:
-         fprintf(file, "u%d", inst->src[i].nr);
+         fprintf(file, "u%d.%d", inst->src[i].nr, inst->src[i].subnr);
          break;
       case IMM:
          switch (inst->src[i].type) {
@@ -1553,7 +1553,7 @@ vec4_visitor::dump_instruction(backend_instruction *be_inst, FILE *file)
       if (inst->src[i].reg_offset != 0 &&
           inst->src[i].file == VGRF &&
           alloc.sizes[inst->src[i].nr] != 1)
-         fprintf(file, ".%d", inst->src[i].reg_offset);
+         fprintf(file, "+%d", inst->src[i].reg_offset);
 
       if (inst->src[i].file != IMM) {
          static const char *chans[4] = {"x", "y", "z", "w"};
