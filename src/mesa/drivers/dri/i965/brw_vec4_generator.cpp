@@ -1919,6 +1919,8 @@ generate_code(struct brw_codegen *p,
 
          dst.hstride = BRW_HORIZONTAL_STRIDE_2;
          dst.width = BRW_WIDTH_4;
+         src[0].vstride = BRW_VERTICAL_STRIDE_4;
+         src[0].width = BRW_WIDTH_4;
          brw_MOV(p, dst, src[0]);
 
          struct brw_reg dst_as_src = dst;
