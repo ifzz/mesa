@@ -598,13 +598,16 @@ vec4_visitor::pack_uniform_registers()
          if (inst->src[i].file != UNIFORM)
             continue;
 
+         assert(type_sz(type_sz(inst->src[i].type)) % 4 == 0);
+         unsigned channel_size = type_sz(inst->src[i].type) / 4;
+
          int reg = inst->src[i].nr;
          for (int c = 0; c < 4; c++) {
             if (!(readmask & (1 << c)))
                continue;
 
-            chans_used[reg] = MAX2(chans_used[reg],
-                                   BRW_GET_SWZ(inst->src[i].swizzle, c) + 1);
+            unsigned channel = BRW_GET_SWZ(inst->src[i].swizzle, c) + 1;
+            chans_used[reg] = MAX2(chans_used[reg], channel * channel_size);
          }
       }
 
@@ -641,8 +644,10 @@ vec4_visitor::pack_uniform_registers()
       int dst;
       /* Find the lowest place we can slot this uniform in. */
       for (dst = 0; dst < src; dst++) {
-	 if (chans_used[dst] + size <= 4)
-	    break;
+         if ((size > 4 && chans_used[dst] == 0 &&
+              chans_used[dst + 1] + size - 4 <= 4) ||
+             (size <= 4 && chans_used[dst] + size <= 4))
+            break;
       }
 
       if (src == dst) {
@@ -658,11 +663,13 @@ vec4_visitor::pack_uniform_registers()
 	       stage_prog_data->param[src * 4 + j];
 	 }
 
-	 chans_used[dst] += size;
-	 chans_used[src] = 0;
+         for (int j = 0; j < size; j+= 4) {
+            chans_used[dst + j / 4] += MIN2(size - j, 4);
+            chans_used[src] = 0;
+         }
       }
 
-      new_uniform_count = MAX2(new_uniform_count, dst + 1);
+      new_uniform_count = MAX2(new_uniform_count, dst + DIV_ROUND_UP(size, 4));
    }
 
    this->uniforms = new_uniform_count;
