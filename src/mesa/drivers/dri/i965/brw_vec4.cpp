@@ -219,7 +219,9 @@ vec4_instruction::regs_read(unsigned arg) const
       return arg == 1 ? mlen : 1;
 
    default:
-      return 1;
+      if (type_sz(src[arg].type) < 8 || src[arg].file == UNIFORM)
+         return 1;
+      return 2;
    }
 }
 
