@@ -160,6 +160,7 @@ public:
    void opt_schedule_instructions();
    void convert_to_hw_regs();
 
+   bool lower_simd_width();
    bool scalarize_df();
    bool expand_64bit_swizzle_to_32bit();
 

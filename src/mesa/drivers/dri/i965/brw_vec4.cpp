@@ -2080,6 +2080,67 @@ vec4_visitor::expand_64bit_swizzle_to_32bit()
    return progress;
 }
 
+/**
+ * Get the closest native SIMD width supported by the hardware for instruction
+ * \p inst.  The instruction will be left untouched by
+ * vec4_visitor::lower_simd_width() if the returned value is 0 (default
+ * execution size).
+ */
+static unsigned
+get_lowered_simd_width(const struct brw_device_info *devinfo,
+                       const vec4_instruction *inst)
+{
+   /* For now we don't need to lower anything other than certain gen7 cases */
+   if (devinfo->gen != 7)
+      return 0;
+
+   /* For now we only care about the case of instructions that write more than
+    * one register but only read one, which is not supported in gen7.
+    */
+   if (inst->regs_written < 2)
+      return 0;
+
+   for (unsigned i = 0; i < 3; i++) {
+      if (inst->src[i].file == UNIFORM)
+         return 4;
+   }
+
+   return 0;
+}
+
+bool
+vec4_visitor::lower_simd_width()
+{
+   bool progress = false;
+
+   foreach_block_and_inst_safe(block, vec4_instruction, inst, cfg) {
+      const unsigned lower_width = get_lowered_simd_width(devinfo, inst);
+      if (lower_width == 0)
+         continue;
+
+      vec4_instruction *linst = new(mem_ctx)
+         vec4_instruction(inst->opcode, inst->dst,
+                          inst->src[0], inst->src[1], inst->src[2]);
+      linst->exec_size = lower_width;
+      linst->regs_written = 1;
+      linst->force_writemask_all = true;
+      inst->insert_before(block, linst);
+
+      linst =new(mem_ctx)
+         vec4_instruction(inst->opcode, offset(inst->dst, 1),
+                          inst->src[0], inst->src[1], inst->src[2]);
+      linst->exec_size = lower_width;
+      linst->regs_written = 1;
+      linst->force_writemask_all = true;
+      inst->insert_before(block, linst);
+
+      inst->remove(block);
+      progress = true;
+   }
+
+   return progress;
+}
+
 bool
 vec4_visitor::run()
 {
@@ -2135,9 +2196,12 @@ vec4_visitor::run()
       backend_shader::dump_instructions(filename);
    }
 
-   bool progress;
+   bool progress = false;
    int iteration = 0;
    int pass_num = 0;
+
+   OPT(lower_simd_width);
+
    do {
       progress = false;
       pass_num = 0;
