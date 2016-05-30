@@ -2067,6 +2067,16 @@ vec4_visitor::expand_64bit_swizzle_to_32bit()
       }
    }
 
+   /* FIXME: we might need to teach liveness analysis that DF swizzle regions
+    * are twice as big, since each channel is analyzed separately. We might be
+    * doing things wrong in opt passes without that. For now, we simply
+    * invalidate the analysis after expanding the swizzles to 32-bit so we
+    * compute proper liveness from this point forward, since we are going to
+    * need this done properly before we do register allocation.
+    */
+   if (progress)
+      invalidate_live_intervals();
+
    return progress;
 }
 
