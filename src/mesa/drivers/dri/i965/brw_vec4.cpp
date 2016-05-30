@@ -1098,6 +1098,10 @@ vec4_visitor::opt_register_coalesce()
 	  inst->src[0].abs || inst->src[0].negate || inst->src[0].reladdr)
 	 continue;
 
+      /* We don't support colaescing when multiple registers are involved */
+      if (inst->regs_read(0) > 1)
+         continue;
+
       /* Remove no-op MOVs */
       if (inst->dst.file == inst->src[0].file &&
           inst->dst.nr == inst->src[0].nr &&
