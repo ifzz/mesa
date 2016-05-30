@@ -651,17 +651,17 @@ vec4_visitor::pack_uniform_registers()
       }
 
       if (src == dst) {
-	 new_loc[src] = dst;
-	 new_chan[src] = 0;
+         new_loc[src] = dst;
+         new_chan[src] = 0;
       } else {
-	 new_loc[src] = dst;
-	 new_chan[src] = chans_used[dst];
+         new_loc[src] = dst;
+         new_chan[src] = chans_used[dst];
 
-	 /* Move the references to the data */
-	 for (int j = 0; j < size; j++) {
-	    stage_prog_data->param[dst * 4 + new_chan[src] + j] =
-	       stage_prog_data->param[src * 4 + j];
-	 }
+         /* Move the references to the data */
+         for (int j = 0; j < size; j++) {
+            stage_prog_data->param[dst * 4 + new_chan[src] + j] =
+               stage_prog_data->param[src * 4 + j];
+         }
 
          for (int j = 0; j < size; j+= 4) {
             chans_used[dst + j / 4] += MIN2(size - j, 4);
@@ -679,8 +679,8 @@ vec4_visitor::pack_uniform_registers()
       for (int i = 0 ; i < 3; i++) {
          int src = inst->src[i].nr;
 
-	 if (inst->src[i].file != UNIFORM)
-	    continue;
+         if (inst->src[i].file != UNIFORM)
+            continue;
 
          inst->src[i].nr = new_loc[src];
          inst->src[i].swizzle += BRW_SWIZZLE4(new_chan[src], new_chan[src],
