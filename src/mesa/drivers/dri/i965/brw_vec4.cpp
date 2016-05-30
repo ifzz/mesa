@@ -1499,6 +1499,7 @@ vec4_visitor::dump_instruction(backend_instruction *be_inst, FILE *file)
          fprintf(file, "w");
    }
    fprintf(file, ":%s", brw_reg_type_letters(inst->dst.type));
+   fprintf(file, "[%d]", inst->regs_written);
 
    if (inst->src[0].file != BAD_FILE)
       fprintf(file, ", ");
@@ -1595,6 +1596,8 @@ vec4_visitor::dump_instruction(backend_instruction *be_inst, FILE *file)
       if (inst->src[i].file != IMM) {
          fprintf(file, ":%s", brw_reg_type_letters(inst->src[i].type));
       }
+
+      fprintf(file, "[%d]", inst->regs_read(i));
 
       if (i < 2 && inst->src[i + 1].file != BAD_FILE)
          fprintf(file, ", ");
@@ -2286,6 +2289,14 @@ vec4_visitor::run()
 
    setup_payload();
 
+   if (unlikely(INTEL_DEBUG & DEBUG_OPTIMIZER)) {
+      char filename[64];
+      snprintf(filename, 64, "%s-%s-%02d-%02d-setup-payload",
+               stage_abbrev, nir->info.name, iteration, ++pass_num);
+
+      backend_shader::dump_instructions(filename);
+   }
+
    if (unlikely(INTEL_DEBUG & DEBUG_SPILL_VEC4)) {
       /* Debug of register spilling: Go spill everything. */
       const int grf_count = alloc.count;
@@ -2317,6 +2328,14 @@ vec4_visitor::run()
    opt_schedule_instructions();
 
    opt_set_dependency_control();
+
+   if (unlikely(INTEL_DEBUG & DEBUG_OPTIMIZER)) {
+      char filename[64];
+      snprintf(filename, 64, "%s-%s-%02d-%02d-dependency-control",
+               stage_abbrev, nir->info.name, iteration, ++pass_num);
+
+      backend_shader::dump_instructions(filename);
+   }
 
    convert_to_hw_regs();
 
