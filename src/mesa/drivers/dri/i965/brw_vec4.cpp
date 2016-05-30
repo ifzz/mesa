@@ -1877,9 +1877,17 @@ vec4_visitor::convert_to_hw_regs()
                 * the second half of a dvec4 for both vertices in a SIMD4x2
                 * execution.
                 *
+                * We also use a vstride of 0 in cases where we want to replicate
+                * a channel. For example, if we have code like:
+                *
+                * mov g2.z g4.x
+                *
+                * and we use g4<2,2,1>.xyxy:DF we would generate XXZZ and read
+                * g4.z instead. By using a vstride of 0, we generate XXXX.
+                *
                 * FIXME: this needs a longer explanation.
                 */
-               if (src.subnr > 0) {
+               if (src.force_vstride0) {
                   reg.vstride = BRW_VERTICAL_STRIDE_0;
                } else {
                   reg.vstride = BRW_VERTICAL_STRIDE_2;
@@ -2062,11 +2070,21 @@ vec4_visitor::expand_64bit_swizzle_to_32bit()
             /* Uniforms work in units of a vec4, so to select the second
              * half of a dvec3/4 uniform, increase reg_offset by one.
              */
-            if (inst->src[arg].file != UNIFORM)
+            if (inst->src[arg].file != UNIFORM) {
                inst->src[arg].subnr = 2;
-            else
+               inst->src[arg].force_vstride0 = true;
+            } else {
                inst->src[arg].reg_offset += 1;
+            }
             swizzle -= 2;
+         } else {
+            if ((inst->dst.writemask == WRITEMASK_Z ||
+                 inst->dst.writemask == WRITEMASK_W) &&
+                (inst->src[arg].swizzle == BRW_SWIZZLE_XXXX ||
+                 inst->src[arg].swizzle == BRW_SWIZZLE_YYYY)) {
+               assert(inst->src[arg].file == VGRF);
+               inst->src[arg].force_vstride0 = true;
+            }
          }
          inst->src[arg].swizzle = BRW_SWIZZLE4(swizzle * 2, swizzle * 2 + 1,
                                                swizzle * 2, swizzle * 2 + 1);
