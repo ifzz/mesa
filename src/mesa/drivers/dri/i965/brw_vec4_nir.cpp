@@ -1167,6 +1167,7 @@ vec4_visitor::setup_imm_df(double v)
 
    src_reg tmp_as_src = src_reg(retype(tmp, BRW_REGISTER_TYPE_DF));
    tmp_as_src.swizzle = BRW_SWIZZLE_XXXX;
+   tmp_as_src.force_vstride0 = true;
    return tmp_as_src;
 }
 
