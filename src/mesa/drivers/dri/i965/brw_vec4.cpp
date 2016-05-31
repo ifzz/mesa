@@ -914,6 +914,18 @@ vec4_visitor::is_dep_ctrl_unsafe(const vec4_instruction *inst)
    }
 
    /*
+    * Code such as this makes the GPU hang:
+    *
+    * cmp.z.f0(8) g7<1>.xDF g5<0,2,1>.xyxyDF g5<0,2,1>.zwzwDF { align16 NoDDClr 1Q };
+    * cmp.z.f0(8) g7<1>.yDF g5<0,2,1>.xyxyDF g5<0,2,1>.zwzwDF { align16 NoDDClr,NoDDChk 1Q };
+    * cmp.z.f0(8) g7<1>.zDF g5<0,2,1>.xyxyDF g5<0,2,1>.zwzwDF { align16 NoDDClr,NoDDChk 1Q };
+    * cmp.z.f0(8) g7<1>.wDF g5<0,2,1>.xyxyDF g5<0,2,1>.zwzwDF { align16 NoDDChk 1Q };
+    * mov(8)      g7<1>UD   g7<8,4,2>UD                       { align1 1Q };
+    */
+   if (inst->regs_written > 1)
+      return true;
+
+   /*
     * mlen:
     * In the presence of send messages, totally interrupt dependency
     * control. They're long enough that the chance of dependency
