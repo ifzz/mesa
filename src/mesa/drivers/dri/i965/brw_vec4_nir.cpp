@@ -1532,6 +1532,28 @@ vec4_visitor::nir_emit_alu(nir_alu_instr *instr)
       break;
    }
 
+   case nir_op_unpack_double_2x32_split_x: {
+      dst_reg tmp = dst_reg(VGRF, alloc.allocate(2));
+      tmp.type = BRW_REGISTER_TYPE_DF;
+      emit(MOV(tmp, op[0]));
+      dst_reg tmp2 = dst_reg(VGRF, alloc.allocate(1));
+      tmp2.type = BRW_REGISTER_TYPE_UD;
+      emit(VEC4_OPCODE_PICK_LOW_32BIT, tmp2, src_reg(tmp));
+      emit(MOV(dst, src_reg(tmp2)));
+      break;
+   }
+
+   case nir_op_unpack_double_2x32_split_y: {
+      dst_reg tmp = dst_reg(VGRF, alloc.allocate(2));
+      tmp.type = BRW_REGISTER_TYPE_DF;
+      emit(MOV(tmp, op[0]));
+      dst_reg tmp2 = dst_reg(VGRF, alloc.allocate(1));
+      tmp2.type = BRW_REGISTER_TYPE_UD;
+      emit(VEC4_OPCODE_PICK_HIGH_32BIT, tmp2, src_reg(tmp));
+      emit(MOV(dst, src_reg(tmp2)));
+      break;
+   }
+
    case nir_op_unpack_half_2x16:
       /* As NIR does not guarantee that we have a correct swizzle outside the
        * boundaries of a vector, and the implementation of emit_unpack_half_2x16
