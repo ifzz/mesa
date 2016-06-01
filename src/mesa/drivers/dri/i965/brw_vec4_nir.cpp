@@ -1945,6 +1945,7 @@ vec4_visitor::nir_emit_alu(nir_alu_instr *instr)
              * operation and each double takes two 32-bit slots, we want
              * to reswizzle the channels in the condition to XXYY.
              */
+            assert(!"FIXME");
             dst_reg zero = dst_reg(VGRF, alloc.allocate(2));
             zero.type = BRW_REGISTER_TYPE_DF;
             emit(MOV(zero, setup_imm_df(0.0)));
