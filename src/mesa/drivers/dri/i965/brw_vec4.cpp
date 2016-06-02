@@ -2147,7 +2147,9 @@ get_lowered_simd_width(const struct brw_device_info *devinfo,
       return 0;
 
    for (unsigned i = 0; i < 3; i++) {
-      if (inst->src[i].file == UNIFORM)
+      if (inst->src[i].file == BAD_FILE)
+         continue;
+      if (inst->regs_read(i) < 2)
          return 4;
    }
 
@@ -2172,9 +2174,18 @@ vec4_visitor::lower_simd_width()
       linst->force_writemask_all = true;
       inst->insert_before(block, linst);
 
+      /* We need to offset into VGRFs for the second part */
+      src_reg srcs[3];
+      for (int i = 0; i < 3; i++) {
+         srcs[i] = inst->src[i];
+         if (srcs[i].file == VGRF) {
+            srcs[i].subnr = type_sz(srcs[i].type) == 8 ? 2 : 4;
+         }
+      }
+
       linst =new(mem_ctx)
          vec4_instruction(inst->opcode, offset(inst->dst, 1),
-                          inst->src[0], inst->src[1], inst->src[2]);
+                          srcs[0], srcs[1], srcs[2]);
       linst->exec_size = lower_width;
       linst->regs_written = 1;
       linst->force_writemask_all = true;
