@@ -1117,19 +1117,11 @@ void
 vec4_visitor::emit_single_to_double(dst_reg dst, src_reg src, bool saturate,
                                     brw_reg_type single_type)
 {
-   dst_reg temp = dst_reg(VGRF, alloc.allocate(1));
-   temp.type = single_type;
-   temp.writemask = 0x5;
-   src.swizzle = brw_compose_swizzle(BRW_SWIZZLE_XXYY, src.swizzle);
-   vec4_instruction *inst = emit(MOV(temp, src));
+   /* Unlike 64-bit to 32-bit conversions, this does not have any special
+    * requirements and we can implement it with a single MOV.
+    */
+   vec4_instruction *inst = emit(MOV(dst, retype(src, single_type)));
    inst->saturate = saturate;
-   src_reg temp_src = src_reg(temp);
-   temp_src.swizzle = BRW_SWIZZLE_NOOP;
-   dst_reg temp2 = dst_reg(VGRF, alloc.allocate(1));
-   temp2.type = BRW_REGISTER_TYPE_DF;
-   emit(VEC4_OPCODE_SINGLE_TO_DOUBLE, temp2, temp_src);
-   src_reg temp2_src = src_reg(temp2);
-   emit(MOV(dst, temp2_src));
 }
 
 src_reg
