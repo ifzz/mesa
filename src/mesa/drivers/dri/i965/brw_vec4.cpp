@@ -1877,7 +1877,7 @@ vec4_visitor::convert_to_hw_regs()
          switch (src.file) {
          case VGRF: {
             unsigned type_size = type_sz(src.type);
-            unsigned width = REG_SIZE / MAX2(4, type_size);
+            unsigned width = REG_SIZE / 2 / MAX2(4, type_size);
             reg = brw_vecn_grf(width, src.nr + src.reg_offset, 0);
             reg.type = src.type;
             reg.subnr = src.subnr * type_size;
